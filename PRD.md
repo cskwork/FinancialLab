@@ -417,8 +417,9 @@ export function useToast() {
 <meta http-equiv="Content-Security-Policy" 
       content="default-src 'self'; 
                img-src 'self' data:; 
-               script-src 'self'; 
-               style-src 'self' 'unsafe-inline'; 
+               script-src 'self' 'unsafe-eval' 'unsafe-inline'; 
+               style-src 'self' 'unsafe-inline';
+               worker-src 'self' blob:; 
                connect-src 'self' https://*;">
 ```
 
