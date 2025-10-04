@@ -1,3 +1,14 @@
+// 브라우저 확장 프로그램 충돌 방지
+if (typeof window !== 'undefined') {
+  // 잠재적 충돌 변수 보호
+  const protectedVars = ['Sft', 'hook', 'overrideMethod']
+  protectedVars.forEach(varName => {
+    if (typeof window[varName] !== 'undefined') {
+      console.warn(`Potential browser extension conflict detected with variable: ${varName}`)
+    }
+  })
+}
+
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import { watch } from 'vue'
