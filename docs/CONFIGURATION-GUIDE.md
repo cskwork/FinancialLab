@@ -622,7 +622,7 @@ netlify deploy --prod
 <meta http-equiv="Content-Security-Policy"
       content="
         default-src 'self';
-        script-src 'self';
+        script-src 'self' 'unsafe-eval' 'unsafe-inline';
         style-src 'self' 'unsafe-inline';
         img-src 'self' data: https:;
         font-src 'self' data:;

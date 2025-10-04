@@ -260,7 +260,7 @@ docker-compose up -d
 **CSP 정책 예시**
 ```html
 <meta http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline';">
+      content="default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; worker-src 'self' blob:;">
 ```
 
 ## 라이선스
