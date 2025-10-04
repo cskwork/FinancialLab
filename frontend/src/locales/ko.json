@@ -33,10 +33,10 @@
     "title": "FinLab",
     "subtitle": "포트폴리오 관리 데모",
     "email": "이메일",
-    "emailPlaceholder": "demo@finlab.app",
+    "emailPlaceholder": "{'demo@finlab.app'}",
     "loginButton": "로그인",
     "loggingIn": "로그인 중...",
-    "hint": "힌트: demo@finlab.app 또는 유효한 이메일을 입력하세요",
+    "hint": "힌트: {'demo@finlab.app'} 또는 유효한 이메일을 입력하세요",
     "mockAuthInfo": "Mock 인증 - 비밀번호가 필요하지 않습니다. 모든 이메일은 사용자를 생성하거나 로그인합니다."
   },
   "dashboard": {
