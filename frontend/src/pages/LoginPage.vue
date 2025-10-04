@@ -28,7 +28,7 @@
         </p>
 
         <p class="hint">
-          {{ t('login.hint', { email: 'demo@finlab.app' }) }}
+          {{ t('login.hint') }}
         </p>
       </form>
 

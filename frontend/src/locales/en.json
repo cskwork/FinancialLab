@@ -36,7 +36,7 @@
     "emailPlaceholder": "demo@finlab.app",
     "loginButton": "Login",
     "loggingIn": "Logging in...",
-    "hint": "Hint: Try {email} or any valid email",
+    "hint": "Hint: Try demo@finlab.app or any valid email",
     "mockAuthInfo": "Mock Authentication - No password required. Any email creates/logs into a user."
   },
   "dashboard": {
