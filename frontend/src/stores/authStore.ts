@@ -7,6 +7,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { apiClient } from '@/services/api'
 import type { LoginResponse } from '@/services/api/schemas'
+import { logger } from '@/utils/logger'
 
 export const useAuthStore = defineStore('auth', () => {
   // State
@@ -75,7 +76,7 @@ export const useAuthStore = defineStore('auth', () => {
         token.value = savedToken
         user.value = JSON.parse(savedUser)
       } catch (err) {
-        console.error('Failed to restore session:', err)
+        logger.error('Failed to restore session', err)
         logout()
       }
     }
