@@ -2,25 +2,25 @@
   <div class="login-page">
     <div class="login-card">
       <div class="login-header">
-        <h1>FinLab</h1>
-        <p class="subtitle">Portfolio Management Demo</p>
+        <h1>{{ t('login.title') }}</h1>
+        <p class="subtitle">{{ t('login.subtitle') }}</p>
       </div>
 
       <form @submit.prevent="handleLogin" class="login-form">
         <div class="form-group">
-          <label for="email">Email</label>
+          <label for="email">{{ t('login.email') }}</label>
           <input
             id="email"
             v-model="email"
             type="email"
-            placeholder="demo@finlab.app"
+            :placeholder="t('login.emailPlaceholder')"
             required
             :disabled="authStore.isLoading"
           />
         </div>
 
         <button type="submit" class="btn-login" :disabled="authStore.isLoading">
-          {{ authStore.isLoading ? 'Logging in...' : 'Login' }}
+          {{ authStore.isLoading ? t('login.loggingIn') : t('login.loginButton') }}
         </button>
 
         <p v-if="authStore.error" class="error-message">
@@ -28,14 +28,13 @@
         </p>
 
         <p class="hint">
-          Hint: Try <code>demo@finlab.app</code> or any valid email
+          {{ t('login.hint', { email: 'demo@finlab.app' }) }}
         </p>
       </form>
 
       <div class="demo-info">
         <p>
-          <strong>Mock Authentication</strong> - No password required. Any email creates/logs
-          into a user.
+          {{ t('login.mockAuthInfo') }}
         </p>
       </div>
     </div>
@@ -45,9 +44,11 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores/authStore'
 
 const router = useRouter()
+const { t } = useI18n()
 const authStore = useAuthStore()
 
 // 이메일 입력

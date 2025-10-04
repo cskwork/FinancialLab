@@ -178,3 +178,6 @@ secrets.json
 # Temporary files
 *.tmp
 *.temp
+
+# Vercel
+.vercel

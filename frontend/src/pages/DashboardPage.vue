@@ -3,14 +3,14 @@
     <div class="dashboard-container">
       <header class="dashboard-header">
         <div>
-          <h1>Dashboard</h1>
+          <h1>{{ t('dashboard.title') }}</h1>
           <p v-if="portfolioStore.currentPortfolio" class="portfolio-name">
             {{ portfolioStore.currentPortfolio.name }}
           </p>
         </div>
 
         <div class="portfolio-selector" v-if="portfolioStore.portfolios.length > 0">
-          <label for="portfolio-select">Portfolio:</label>
+          <label for="portfolio-select">{{ t('dashboard.portfolio') }}:</label>
           <select
             id="portfolio-select"
             v-model="selectedPortfolioId"
@@ -27,16 +27,16 @@
         </div>
       </header>
 
-      <LoadingSpinner v-if="isLoading" fullscreen message="Loading portfolio data..." />
+      <LoadingSpinner v-if="isLoading" fullscreen :message="t('dashboard.loadingPortfolio')" />
 
       <div v-else-if="!authStore.isAuthenticated" class="empty-state">
-        <p>Please login to view your portfolio</p>
-        <router-link to="/login" class="btn-primary">Go to Login</router-link>
+        <p>{{ t('dashboard.pleaseLogin') }}</p>
+        <router-link to="/login" class="btn-primary">{{ t('dashboard.goToLogin') }}</router-link>
       </div>
 
       <div v-else-if="!portfolioStore.hasPortfolios" class="empty-state">
-        <p>No portfolios found. Create one to get started.</p>
-        <button @click="createDemoPortfolio" class="btn-primary">Create Demo Portfolio</button>
+        <p>{{ t('dashboard.noPortfolios') }}</p>
+        <button @click="createDemoPortfolio" class="btn-primary">{{ t('dashboard.createDemoPortfolio') }}</button>
       </div>
 
       <div v-else class="dashboard-content">
@@ -44,25 +44,25 @@
         <section class="summary-section">
           <Card>
             <template #header>
-              <h2>Portfolio Summary</h2>
+              <h2>{{ t('dashboard.summary') }}</h2>
             </template>
             <div class="summary-grid">
               <div class="summary-item">
-                <span class="summary-label">Total Value</span>
+                <span class="summary-label">{{ t('dashboard.totalValue') }}</span>
                 <span class="summary-value">
                   {{ portfolioMetrics ? `$${formatCurrency(portfolioMetrics.totalValue)}` : '--' }}
                 </span>
               </div>
               <div class="summary-item">
-                <span class="summary-label">Total Holdings</span>
+                <span class="summary-label">{{ t('dashboard.totalHoldings') }}</span>
                 <span class="summary-value">{{ holdingsCount }}</span>
               </div>
               <div class="summary-item">
-                <span class="summary-label">Total Transactions</span>
+                <span class="summary-label">{{ t('dashboard.totalTransactions') }}</span>
                 <span class="summary-value">{{ transactionStore.transactions.length }}</span>
               </div>
               <div class="summary-item">
-                <span class="summary-label">Daily PnL</span>
+                <span class="summary-label">{{ t('dashboard.dailyPnL') }}</span>
                 <span class="summary-value" :class="{ positive: (portfolioMetrics?.pnlDaily ?? 0) > 0, negative: (portfolioMetrics?.pnlDaily ?? 0) < 0 }">
                   {{
                     portfolioMetrics
@@ -72,15 +72,15 @@
                 </span>
               </div>
               <div class="summary-item">
-                <span class="summary-label">Sharpe Ratio</span>
+                <span class="summary-label">{{ t('dashboard.sharpeRatio') }}</span>
                 <span class="summary-value">{{ portfolioMetrics ? portfolioMetrics.sharpe.toFixed(2) : '--' }}</span>
               </div>
               <div class="summary-item">
-                <span class="summary-label">Volatility</span>
+                <span class="summary-label">{{ t('dashboard.volatility') }}</span>
                 <span class="summary-value">{{ portfolioMetrics ? `${portfolioMetrics.volatility.toFixed(2)}%` : '--' }}</span>
               </div>
               <div class="summary-item">
-                <span class="summary-label">Base Currency</span>
+                <span class="summary-label">{{ t('dashboard.baseCurrency') }}</span>
                 <span class="summary-value">{{ portfolioStore.currentPortfolio?.baseCurrency }}</span>
               </div>
             </div>
@@ -91,21 +91,21 @@
         <section class="holdings-section">
           <Card>
             <template #header>
-              <h2>Current Holdings (FIFO)</h2>
+              <h2>{{ t('dashboard.currentHoldings') }}</h2>
             </template>
             <div v-if="holdings.length === 0" class="empty-message">
-              <p>No holdings yet. Add some buy transactions to see them here.</p>
+              <p>{{ t('dashboard.noHoldings') }}</p>
             </div>
             <div v-else class="table-container">
               <table class="holdings-table">
                 <thead>
                   <tr>
-                    <th>Symbol</th>
-                    <th>Shares</th>
-                    <th>Avg Cost</th>
-                    <th>Market Value</th>
-                    <th>Unrealized PnL</th>
-                    <th>Updated</th>
+                    <th>{{ t('dashboard.symbol') }}</th>
+                    <th>{{ t('dashboard.shares') }}</th>
+                    <th>{{ t('dashboard.avgCost') }}</th>
+                    <th>{{ t('dashboard.marketValue') }}</th>
+                    <th>{{ t('dashboard.unrealizedPnL') }}</th>
+                    <th>{{ t('dashboard.updated') }}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -132,12 +132,12 @@
           <Card>
             <template #header>
               <div class="section-header">
-                <h2>Recent Transactions</h2>
-                <router-link to="/transactions" class="link-view-all">View All →</router-link>
+                <h2>{{ t('dashboard.recentTransactions') }}</h2>
+                <router-link to="/transactions" class="link-view-all">{{ t('dashboard.viewAll') }}</router-link>
               </div>
             </template>
             <div v-if="transactionStore.sortedTransactions.length === 0" class="empty-message">
-              <p>No transactions yet.</p>
+              <p>{{ t('dashboard.noTransactions') }}</p>
             </div>
             <div v-else class="transactions-list">
               <div
@@ -147,7 +147,7 @@
                 :class="`tx-${tx.type.toLowerCase()}`"
               >
                 <div class="tx-info">
-                  <span class="tx-type">{{ tx.type }}</span>
+                  <span class="tx-type">{{ t(`transactions.${tx.type.toLowerCase()}`) }}</span>
                   <span v-if="tx.symbol" class="tx-symbol">{{ tx.symbol }}</span>
                   <span v-if="tx.qty" class="tx-qty">{{ tx.qty }} shares</span>
                   <span v-if="tx.price" class="tx-price">${{ tx.price.toFixed(2) }}</span>
@@ -167,6 +167,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores/authStore'
 import { usePortfolioStore } from '@/stores/portfolioStore'
 import { useTransactionStore } from '@/stores/transactionStore'
@@ -175,6 +176,7 @@ import Card from '@/components/common/Card.vue'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 
 const router = useRouter()
+const { t } = useI18n()
 const authStore = useAuthStore()
 const portfolioStore = usePortfolioStore()
 const transactionStore = useTransactionStore()

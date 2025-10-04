@@ -8,30 +8,41 @@
 
       <div v-if="authStore.isAuthenticated" class="navbar-menu">
         <router-link to="/dashboard" class="nav-link" active-class="active">
-          Dashboard
+          {{ t('nav.dashboard') }}
         </router-link>
         <router-link to="/transactions" class="nav-link" active-class="active">
-          Transactions
+          {{ t('nav.transactions') }}
         </router-link>
         <router-link to="/goals-plans" class="nav-link" active-class="active">
-          Goals & Plans
+          {{ t('nav.goalsPlans') }}
         </router-link>
         <router-link to="/backtest" class="nav-link" active-class="active">
-          Backtest Lab
+          {{ t('nav.backtestLab') }}
         </router-link>
       </div>
 
       <div class="navbar-right">
+        <div class="language-control" role="group" aria-label="Language toggle">
+          <label class="control-label" for="language-select">{{ t('nav.language') }}</label>
+          <select
+            id="language-select"
+            v-model="currentLocale"
+            class="language-select"
+          >
+            <option value="ko">{{ t('nav.korean') }}</option>
+            <option value="en">{{ t('nav.english') }}</option>
+          </select>
+        </div>
         <div class="backend-control" role="group" aria-label="Backend mode toggle">
-          <label class="control-label" for="backend-mode">Backend</label>
+          <label class="control-label" for="backend-mode">{{ t('nav.backend') }}</label>
           <select
             id="backend-mode"
             v-model="backendMode"
             class="backend-select"
             aria-describedby="backend-mode-hint"
           >
-            <option value="mock">Mock</option>
-            <option value="live">Live</option>
+            <option value="mock">{{ t('nav.mock') }}</option>
+            <option value="live">{{ t('nav.live') }}</option>
           </select>
           <input
             id="backend-url"
@@ -47,17 +58,17 @@
             :disabled="backendMode === 'mock'"
             @click="handleConnectLive"
           >
-            Connect
+            {{ t('common.connect') }}
           </button>
-          <span id="backend-mode-hint" class="control-hint">Mock 모드는 오프라인에서도 동작합니다.</span>
+          <span id="backend-mode-hint" class="control-hint">{{ t('nav.backendHint') }}</span>
         </div>
         <span v-if="authStore.isAuthenticated" class="user-email">
           {{ authStore.currentUserEmail }}
         </span>
         <button v-if="authStore.isAuthenticated" @click="handleLogout" class="btn-logout">
-          Logout
+          {{ t('common.logout') }}
         </button>
-        <router-link v-else to="/login" class="btn-login"> Login </router-link>
+        <router-link v-else to="/login" class="btn-login">{{ t('common.login') }}</router-link>
       </div>
     </div>
   </nav>
@@ -66,15 +77,17 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores/authStore'
 import { usePortfolioStore } from '@/stores/portfolioStore'
 import { useTransactionStore } from '@/stores/transactionStore'
 import { useGoalPlanStore } from '@/stores/goalPlanStore'
 import { useAnalyticsStore } from '@/stores/analyticsStore'
-import { useConfigStore, type BackendMode } from '@/stores/configStore'
+import { useConfigStore, type BackendMode, type Locale } from '@/stores/configStore'
 import { useToast } from '@/composables/useToast'
 
 const router = useRouter()
+const { t, locale } = useI18n()
 const authStore = useAuthStore()
 const portfolioStore = usePortfolioStore()
 const transactionStore = useTransactionStore()
@@ -87,13 +100,21 @@ const backendMode = computed({
   get: () => configStore.backendMode,
   set: (value: BackendMode) => {
     configStore.setBackendMode(value)
-    toast.info(value === 'mock' ? 'Mock API 모드로 전환했습니다.' : 'Live API 모드로 전환했습니다.')
+    toast.info(value === 'mock' ? t('nav.mockModeEnabled') : t('nav.liveModeEnabled'))
   }
 })
 
 const backendUrl = computed({
   get: () => configStore.backendUrl,
   set: (value) => configStore.setBackendUrl(value.trim())
+})
+
+const currentLocale = computed({
+  get: () => configStore.locale,
+  set: (value: Locale) => {
+    configStore.setLocale(value)
+    locale.value = value
+  }
 })
 
 // 로그아웃 처리
@@ -108,12 +129,12 @@ function handleLogout() {
 
 function handleConnectLive() {
   if (!backendUrl.value) {
-    toast.warning('라이브 백엔드 URL을 입력하세요.')
+    toast.warning(t('nav.liveUrlRequired'))
     return
   }
 
   configStore.setBackendMode('live')
-  toast.success('Live API 모드로 연결을 시도합니다.')
+  toast.success(t('nav.liveConnecting'))
 }
 </script>
 
@@ -184,6 +205,21 @@ function handleConnectLive() {
   display: flex;
   align-items: center;
   gap: var(--space-4);
+}
+
+.language-control {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.language-select {
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-md);
+  font-size: var(--font-size-sm);
+  background-color: var(--color-background);
+  cursor: pointer;
 }
 
 .backend-control {
