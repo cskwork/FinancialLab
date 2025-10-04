@@ -39,9 +39,21 @@ function goHome() {
 
 onErrorCaptured((err) => {
   hasError.value = true
-  errorMessage.value = err instanceof Error ? err.message : '예상치 못한 오류입니다.'
+
+  // 브라우저 확장 프로그램 충돌 감지
+  if (err instanceof Error && (
+    err.message.includes('Identifier') && err.message.includes('already been declared') ||
+    err.message.includes('Invalid linked format') ||
+    err.message.includes('contentscript')
+  )) {
+    errorMessage.value = '브라우저 확장 프로그램과 충돌이 발생했습니다. 확장 프로그램을 비활성화하고 다시 시도하세요.'
+    toast.error('브라우저 확장 프로그램 충돌이 감지되었습니다.')
+  } else {
+    errorMessage.value = err instanceof Error ? err.message : '예상치 못한 오류입니다.'
+    toast.error('오류가 발생했습니다. 잠시 후 다시 시도하세요.')
+  }
+
   console.error('[ErrorBoundary]', err)
-  toast.error('오류가 발생했습니다. 잠시 후 다시 시도하세요.')
   return false
 })
 </script>
