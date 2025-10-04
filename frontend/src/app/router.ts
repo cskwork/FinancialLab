@@ -108,15 +108,21 @@ router.beforeEach((to, _from, next) => {
     document.title = to.meta.title as string
   }
 
-  // 인증 체크 (나중에 auth store와 연동)
-  // const requiresAuth = to.meta.requiresAuth
-  // if (requiresAuth && !isAuthenticated()) {
-  //   next({ name: 'login', query: { redirect: to.fullPath } })
-  // } else {
-  //   next()
-  // }
-
-  next()
+  // 인증 체크
+  const requiresAuth = to.meta.requiresAuth
+  if (requiresAuth) {
+    // authStore를 동적으로 import하여 순환 의존성 방지
+    import('@/stores/authStore').then(({ useAuthStore }) => {
+      const authStore = useAuthStore()
+      if (!authStore.isAuthenticated) {
+        next({ name: 'login', query: { redirect: to.fullPath } })
+      } else {
+        next()
+      }
+    })
+  } else {
+    next()
+  }
 })
 
 export default router

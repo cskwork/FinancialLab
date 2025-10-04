@@ -1,6 +1,7 @@
 import crypto, { webcrypto } from 'node:crypto'
 import type { BinaryToTextEncoding } from 'node:crypto'
 import { Buffer } from 'node:buffer'
+import 'fake-indexeddb/auto'
 
 if (typeof globalThis.crypto?.getRandomValues !== 'function') {
   // Vitest가 Node 16 환경에서 Web Crypto API를 사용할 수 있도록 polyfill을 추가합니다.

@@ -9,6 +9,7 @@ import { userRepository } from '@/services/db/repositories/UserRepository'
 import { portfolioRepository } from '@/services/db/repositories/PortfolioRepository'
 import { goalRepository } from '@/services/db/repositories/GoalRepository'
 import { planRepository } from '@/services/db/repositories/PlanRepository'
+import { logger } from './logger'
 
 /**
  * OHLCV CSV 데이터 타입
@@ -159,7 +160,7 @@ export async function loadAllSeedData(): Promise<{
       transactionsLoaded: transactions.length
     }
   } catch (error) {
-    console.error('Failed to load seed data:', error)
+    logger.error('Failed to load seed data', error)
     throw error
   }
 }
@@ -183,11 +184,11 @@ export async function initializeSeedData(): Promise<void> {
   const isEmpty = await isDatabaseEmpty()
 
   if (isEmpty) {
-    console.log('Database is empty. Loading seed data...')
+    logger.info('Database is empty. Loading seed data...')
     const result = await loadAllSeedData()
-    console.log(`Seed data loaded: ${result.candlesLoaded} candles, ${result.transactionsLoaded} transactions`)
+    logger.info(`Seed data loaded: ${result.candlesLoaded} candles, ${result.transactionsLoaded} transactions`)
   } else {
-    console.log('Database already has data. Skipping seed data load.')
+    logger.info('Database already has data. Skipping seed data load.')
   }
 }
 
