@@ -22,11 +22,7 @@ export const i18n = createI18n<[MessageSchema], 'ko' | 'en'>({
   globalInjection: true, // 전역 $t 사용 가능
   missingWarn: false, // 누락된 번역 경고 비활성화
   fallbackWarn: false, // 폴백 경고 비활성화
-  warnHtmlMessage: false, // HTML 메시지 경고 비활성화
-  messageCompiler: (message: string | any) => {
-    // 간단한 메시지 컴파일러: linked messages 파싱을 비활성화하고 단순 문자열로 처리
-    return () => typeof message === 'string' ? message : String(message)
-  }
+  warnHtmlMessage: false // HTML 메시지 경고 비활성화
 })
 
 export default i18n
