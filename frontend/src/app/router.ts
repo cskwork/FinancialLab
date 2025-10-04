@@ -12,7 +12,7 @@ const routes: RouteRecordRaw[] = [
     name: 'landing',
     component: () => import('@/pages/LandingPage.vue'),
     meta: {
-      title: 'FinLab - Financial Portfolio Demo',
+      title: 'FinancialLab - 금융 분석 플랫폼',
       requiresAuth: false
     }
   },
@@ -21,7 +21,7 @@ const routes: RouteRecordRaw[] = [
     name: 'login',
     component: () => import('@/pages/LoginPage.vue'),
     meta: {
-      title: 'Login - FinLab',
+      title: '로그인 - FinancialLab',
       requiresAuth: false
     }
   },
@@ -30,7 +30,7 @@ const routes: RouteRecordRaw[] = [
     name: 'dashboard',
     component: () => import('@/pages/DashboardPage.vue'),
     meta: {
-      title: 'Dashboard - FinLab',
+      title: '대시보드 - FinancialLab',
       requiresAuth: true
     }
   },
@@ -39,7 +39,7 @@ const routes: RouteRecordRaw[] = [
     name: 'transactions',
     component: () => import('@/pages/TransactionsPage.vue'),
     meta: {
-      title: 'Transactions - FinLab',
+      title: '거래 내역 - FinancialLab',
       requiresAuth: true
     }
   },
@@ -48,7 +48,7 @@ const routes: RouteRecordRaw[] = [
     name: 'goals-plans',
     component: () => import('@/pages/GoalsPlansPage.vue'),
     meta: {
-      title: 'Goals & Plans - FinLab',
+      title: '목표 및 계획 - FinancialLab',
       requiresAuth: true
     }
   },
@@ -57,7 +57,7 @@ const routes: RouteRecordRaw[] = [
     name: 'backtest',
     component: () => import('@/pages/BacktestLabPage.vue'),
     meta: {
-      title: 'Backtest Lab - FinLab',
+      title: '백테스트 연구소 - FinancialLab',
       requiresAuth: true
     }
   },
@@ -66,7 +66,7 @@ const routes: RouteRecordRaw[] = [
     name: 'api-playground',
     component: () => import('@/pages/ApiPlaygroundPage.vue'),
     meta: {
-      title: 'API Playground - FinLab',
+      title: 'API 플레이그라운드 - FinancialLab',
       requiresAuth: false
     }
   },
@@ -75,7 +75,7 @@ const routes: RouteRecordRaw[] = [
     name: 'docs',
     component: () => import('@/pages/DocsPage.vue'),
     meta: {
-      title: 'Documentation - FinLab',
+      title: '문서화 - FinancialLab',
       requiresAuth: false
     }
   },
