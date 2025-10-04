@@ -11,9 +11,9 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
-import NavBar from './components/NavBar.vue'
-import ErrorBoundary from './components/ErrorBoundary.vue'
-import ToastContainer from './components/ToastContainer.vue'
+import NavBar from './components/common/NavBar.vue'
+import ErrorBoundary from './components/layout/ErrorBoundary.vue'
+import ToastContainer from './components/layout/ToastContainer.vue'
 
 const route = useRoute()
 

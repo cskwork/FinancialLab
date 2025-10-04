@@ -16,16 +16,10 @@
           </router-link>
         </div>
       </div>
-      <div class="hero-media" aria-label="Product walkthrough video">
-        <video
-          controls
-          preload="none"
-          poster="/images/demo-poster.png"
-          aria-describedby="demo-video-caption"
-        >
-          <source src="/media/finlab-demo.mp4" type="video/mp4" />
-          <p id="demo-video-caption">데모 영상을 재생하려면 최신 브라우저가 필요합니다.</p>
-        </video>
+      <div class="hero-media" aria-label="Product walkthrough placeholder">
+        <div class="demo-placeholder">
+          <p>🎥 Demo video coming soon...</p>
+        </div>
       </div>
     </header>
 

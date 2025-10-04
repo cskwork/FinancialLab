@@ -161,7 +161,7 @@
 <script setup lang="ts">
 import { reactive, computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import Card from '@/components/Card.vue'
+import Card from '@/components/common/Card.vue'
 import { useAuthStore } from '@/stores/authStore'
 import { usePortfolioStore } from '@/stores/portfolioStore'
 import { useGoalPlanStore } from '@/stores/goalPlanStore'

@@ -210,8 +210,8 @@ import { usePortfolioStore } from '@/stores/portfolioStore'
 import { useTransactionStore } from '@/stores/transactionStore'
 import { useAnalyticsStore } from '@/stores/analyticsStore'
 import { useToast } from '@/composables/useToast'
-import Card from '@/components/Card.vue'
-import LoadingSpinner from '@/components/LoadingSpinner.vue'
+import Card from '@/components/common/Card.vue'
+import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import type { CreateTransactionRequest } from '@/services/api/schemas'
 
 const router = useRouter()
@@ -364,7 +364,9 @@ async function handleCsvFile(event: Event) {
         }
       }
 
-      await analyticsStore.fetchAnalytics(portfolioStore.currentPortfolio.id)
+      if (portfolioStore.currentPortfolio) {
+        await analyticsStore.fetchAnalytics(portfolioStore.currentPortfolio.id)
+      }
       toast.success(`${created} transactions imported.`)
     }
 

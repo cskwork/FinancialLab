@@ -171,8 +171,8 @@ import { useAuthStore } from '@/stores/authStore'
 import { usePortfolioStore } from '@/stores/portfolioStore'
 import { useTransactionStore } from '@/stores/transactionStore'
 import { useAnalyticsStore } from '@/stores/analyticsStore'
-import Card from '@/components/Card.vue'
-import LoadingSpinner from '@/components/LoadingSpinner.vue'
+import Card from '@/components/common/Card.vue'
+import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
