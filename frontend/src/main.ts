@@ -3,7 +3,7 @@ if (typeof window !== 'undefined') {
   // 잠재적 충돌 변수 보호
   const protectedVars = ['Sft', 'hook', 'overrideMethod']
   protectedVars.forEach(varName => {
-    if (typeof window[varName] !== 'undefined') {
+    if (typeof (window as any)[varName] !== 'undefined') {
       console.warn(`Potential browser extension conflict detected with variable: ${varName}`)
     }
   })
