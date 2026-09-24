@@ -1,220 +1,240 @@
 <template>
-  <div class="transactions-page">
-    <div class="transactions-container">
-      <header class="transactions-header">
-        <h1>Transactions</h1>
-        <div class="header-actions">
-          <button @click="showAddForm = !showAddForm" class="btn-primary">
-            {{ showAddForm ? 'Cancel' : '+ Add Transaction' }}
-          </button>
-          <button @click="triggerCsvImport" class="btn-secondary" :disabled="isImporting">
-            {{ isImporting ? `Importing ${importProgress}%` : 'Import CSV' }}
-          </button>
-          <input
-            ref="fileInputRef"
-            type="file"
-            accept=".csv"
-            class="visually-hidden"
-            @change="handleCsvFile"
-          />
+  <div class="page transactions-page">
+    <TitleBlock title="Transactions" sheet="02 / 04">
+      <template v-if="portfolioStore.currentPortfolio" #default>{{ portfolioStore.currentPortfolio.name }}</template>
+      <template #actions>
+        <button
+          type="button"
+          class="btn"
+          :class="showAddForm ? '' : 'btn--primary'"
+          :aria-expanded="showAddForm"
+          aria-controls="tx-entry"
+          @click="showAddForm = !showAddForm"
+        >
+          <component :is="showAddForm ? X : Plus" aria-hidden="true" />
+          {{ showAddForm ? 'Cancel' : 'Add Transaction' }}
+        </button>
+        <button type="button" class="btn" :disabled="isImporting" @click="triggerCsvImport">
+          <Upload aria-hidden="true" />
+          {{ isImporting ? `Importing ${importProgress}%` : 'Import CSV' }}
+        </button>
+        <input
+          ref="fileInputRef"
+          type="file"
+          accept=".csv"
+          class="visually-hidden"
+          tabindex="-1"
+          aria-hidden="true"
+          @change="handleCsvFile"
+        />
+      </template>
+    </TitleBlock>
+
+    <LoadingSpinner v-if="isLoading" fullscreen message="Loading transactions..." />
+
+    <EmptySheet v-else-if="!authStore.isAuthenticated">
+      Please login to view transactions
+      <template #action>
+        <router-link to="/login" class="btn btn--primary">Go to Login</router-link>
+      </template>
+    </EmptySheet>
+
+    <EmptySheet v-else-if="!portfolioStore.currentPortfolio">
+      No portfolio selected. Go to dashboard to create one.
+      <template #action>
+        <router-link to="/dashboard" class="btn btn--primary">Go to Dashboard</router-link>
+      </template>
+    </EmptySheet>
+
+    <div v-else class="transactions-content">
+      <!-- New entry: the ledger's next blank line -->
+      <section v-if="showAddForm" id="tx-entry" class="block entry" aria-labelledby="entry-heading">
+        <div class="block-head">
+          <h2 id="entry-heading">Add New Transaction</h2>
+          <p>Fields marked * are required.</p>
         </div>
-      </header>
-
-      <LoadingSpinner v-if="isLoading" fullscreen message="Loading transactions..." />
-
-      <div v-else-if="!authStore.isAuthenticated" class="empty-state">
-        <p>Please login to view transactions</p>
-        <router-link to="/login" class="btn-primary">Go to Login</router-link>
-      </div>
-
-      <div v-else-if="!portfolioStore.currentPortfolio" class="empty-state">
-        <p>No portfolio selected. Go to dashboard to create one.</p>
-        <router-link to="/dashboard" class="btn-primary">Go to Dashboard</router-link>
-      </div>
-
-      <div v-else class="transactions-content">
-        <!-- Add Transaction Form -->
-        <Card v-if="showAddForm" class="add-form">
-          <template #header>
-            <h2>Add New Transaction</h2>
-          </template>
-          <form @submit.prevent="handleAddTransaction" class="transaction-form">
-            <div class="form-row">
-              <div class="form-group">
-                <label for="type">Type *</label>
-                <select id="type" v-model="formData.type" required>
-                  <option value="BUY">BUY</option>
-                  <option value="SELL">SELL</option>
-                  <option value="DEPOSIT">DEPOSIT</option>
-                  <option value="WITHDRAW">WITHDRAW</option>
-                </select>
-              </div>
-
-              <div class="form-group" v-if="formData.type === 'BUY' || formData.type === 'SELL'">
-                <label for="symbol">Symbol *</label>
-                <input
-                  id="symbol"
-                  v-model="formData.symbol"
-                  type="text"
-                  placeholder="AAPL"
-                  required
-                />
-              </div>
-
-              <div class="form-group" v-if="formData.type === 'BUY' || formData.type === 'SELL'">
-                <label for="qty">Quantity *</label>
-                <input
-                  id="qty"
-                  v-model.number="formData.qty"
-                  type="number"
-                  step="0.01"
-                  placeholder="10"
-                  required
-                />
-              </div>
-
-              <div class="form-group" v-if="formData.type === 'BUY' || formData.type === 'SELL'">
-                <label for="price">Price *</label>
-                <input
-                  id="price"
-                  v-model.number="formData.price"
-                  type="number"
-                  step="0.01"
-                  placeholder="150.00"
-                  required
-                />
-              </div>
+        <form class="entry-line" @submit.prevent="handleAddTransaction">
+          <div class="field f-date">
+            <label for="timestamp">Date &amp; Time *</label>
+            <input id="timestamp" v-model="formData.timestamp" type="datetime-local" required />
+          </div>
+          <div class="field f-type">
+            <label for="type">Type *</label>
+            <select id="type" v-model="formData.type" required>
+              <option value="BUY">BUY</option>
+              <option value="SELL">SELL</option>
+              <option value="DEPOSIT">DEPOSIT</option>
+              <option value="WITHDRAW">WITHDRAW</option>
+            </select>
+          </div>
+          <template v-if="formData.type === 'BUY' || formData.type === 'SELL'">
+            <div class="field f-symbol">
+              <label for="symbol">Symbol *</label>
+              <input id="symbol" v-model="formData.symbol" type="text" placeholder="AAPL" autocapitalize="characters" required />
             </div>
-
-            <div class="form-row">
-              <div class="form-group">
-                <label for="fee">Fee</label>
-                <input
-                  id="fee"
-                  v-model.number="formData.fee"
-                  type="number"
-                  step="0.01"
-                  placeholder="0.00"
-                />
-              </div>
-
-              <div class="form-group">
-                <label for="timestamp">Date & Time *</label>
-                <input id="timestamp" v-model="formData.timestamp" type="datetime-local" required />
-              </div>
+            <div class="field f-num">
+              <label for="qty">Quantity *</label>
+              <input id="qty" v-model.number="formData.qty" type="number" step="0.01" min="0" placeholder="10" required />
             </div>
-
-            <div class="form-group">
-              <label for="note">Note</label>
-              <textarea
-                id="note"
-                v-model="formData.note"
-                placeholder="Optional notes..."
-                rows="2"
-              ></textarea>
-            </div>
-
-            <div class="form-actions">
-              <button type="submit" class="btn-primary" :disabled="transactionStore.isLoading">
-                {{ transactionStore.isLoading ? 'Adding...' : 'Add Transaction' }}
-              </button>
-              <button type="button" @click="resetForm" class="btn-secondary">Reset</button>
-            </div>
-
-            <p v-if="transactionStore.error" class="error-message">
-              {{ transactionStore.error }}
-            </p>
-          </form>
-        </Card>
-
-        <!-- Transactions List -->
-        <Card>
-          <template #header>
-            <div class="list-header">
-              <h2>All Transactions ({{ transactionStore.transactions.length }})</h2>
-              <div class="filter-actions">
-                <select v-model="filterType" class="filter-select">
-                  <option value="ALL">All Types</option>
-                  <option value="BUY">BUY</option>
-                  <option value="SELL">SELL</option>
-                  <option value="DEPOSIT">DEPOSIT</option>
-                  <option value="WITHDRAW">WITHDRAW</option>
-                </select>
-              </div>
+            <div class="field f-num">
+              <label for="price">Price *</label>
+              <input id="price" v-model.number="formData.price" type="number" step="0.01" min="0" placeholder="150.00" required />
             </div>
           </template>
-
-          <div v-if="filteredTransactions.length === 0" class="empty-message">
-            <p>No transactions found. Add your first transaction above!</p>
+          <div class="field f-num">
+            <label for="fee">Fee</label>
+            <input id="fee" v-model.number="formData.fee" type="number" step="0.01" min="0" placeholder="0.00" />
           </div>
-
-          <div v-else class="table-container">
-            <table class="transactions-table">
-              <thead>
-                <tr>
-                  <th>Date</th>
-                  <th>Type</th>
-                  <th>Symbol</th>
-                  <th>Quantity</th>
-                  <th>Price</th>
-                  <th>Fee</th>
-                  <th>Total</th>
-                  <th>Note</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr
-                  v-for="tx in filteredTransactions"
-                  :key="tx.id"
-                  :class="`tx-row-${tx.type.toLowerCase()}`"
-                >
-                  <td class="tx-date">{{ formatDate(tx.timestamp) }}</td>
-                  <td>
-                    <span class="tx-type-badge" :class="`badge-${tx.type.toLowerCase()}`">
-                      {{ tx.type }}
-                    </span>
-                  </td>
-                  <td>{{ tx.symbol || '-' }}</td>
-                  <td>{{ tx.qty !== undefined ? tx.qty.toFixed(2) : '-' }}</td>
-                  <td>{{ tx.price !== undefined ? `$${tx.price.toFixed(2)}` : '-' }}</td>
-                  <td>${{ tx.fee.toFixed(2) }}</td>
-                  <td>
-                    {{
-                      tx.qty !== undefined && tx.price !== undefined
-                        ? `$${(tx.qty * tx.price + tx.fee).toFixed(2)}`
-                        : '-'
-                    }}
-                  </td>
-                  <td class="tx-note">{{ tx.note || '-' }}</td>
-                  <td>
-                    <button @click="handleDelete(tx.id)" class="btn-delete" title="Delete">
-                      🗑️
-                    </button>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+          <div class="field f-note">
+            <label for="note">Note</label>
+            <input id="note" v-model="formData.note" type="text" placeholder="Optional notes..." />
           </div>
-        </Card>
-      </div>
+          <div class="entry-actions">
+            <button type="submit" class="btn btn--primary" :disabled="transactionStore.isLoading">
+              {{ transactionStore.isLoading ? 'Adding...' : 'Add Transaction' }}
+            </button>
+            <button type="button" class="btn btn--quiet" @click="resetForm">Reset</button>
+          </div>
+          <p v-if="transactionStore.error" class="error-message" role="alert">
+            {{ transactionStore.error }}
+          </p>
+        </form>
+      </section>
+
+      <!-- Ledger -->
+      <section class="block" aria-labelledby="ledger-heading">
+        <div class="block-head">
+          <h2 id="ledger-heading">All Transactions ({{ transactionStore.transactions.length }})</h2>
+        </div>
+
+        <div class="filter-bar">
+          <div class="search">
+            <Search class="search-icon" aria-hidden="true" />
+            <label for="tx-search" class="sr-only">Search symbol or note</label>
+            <input
+              id="tx-search"
+              v-model="searchQuery"
+              class="input"
+              type="search"
+              placeholder="Search symbol or note"
+              autocomplete="off"
+            />
+          </div>
+          <div class="type-seg" role="group" aria-label="Filter by type">
+            <button
+              v-for="option in typeOptions"
+              :key="option"
+              type="button"
+              class="seg"
+              :aria-pressed="filterType === option"
+              @click="filterType = option"
+            >
+              {{ option === 'ALL' ? 'All Types' : option }}
+              <span class="seg-count fig">{{ typeCounts[option] }}</span>
+            </button>
+          </div>
+        </div>
+
+        <p v-if="isFiltered" class="filter-status" aria-live="polite">
+          Showing <span class="fig">{{ filteredTransactions.length }}</span> of
+          <span class="fig">{{ transactionStore.transactions.length }}</span>
+          <button type="button" class="btn btn--quiet btn--sm" @click="clearFilters">Clear filters</button>
+        </p>
+
+        <EmptySheet v-if="transactionStore.transactions.length === 0">
+          No transactions found. Add your first transaction above!
+          <template #action>
+            <button type="button" class="btn btn--primary" @click="showAddForm = true">
+              <Plus aria-hidden="true" />
+              Add Transaction
+            </button>
+          </template>
+        </EmptySheet>
+
+        <EmptySheet v-else-if="filteredTransactions.length === 0" compact>
+          No transactions match these filters.
+          <template #action>
+            <button type="button" class="btn btn--sm" @click="clearFilters">Clear filters</button>
+          </template>
+        </EmptySheet>
+
+        <div v-else class="ledger-scroll">
+          <table class="transactions-table">
+            <thead>
+              <tr>
+                <th scope="col">Date</th>
+                <th scope="col">Type</th>
+                <th scope="col">Symbol</th>
+                <th scope="col" class="num">Quantity</th>
+                <th scope="col" class="num">Price</th>
+                <th scope="col" class="num">Fee</th>
+                <th scope="col" class="num">Total</th>
+                <th scope="col">Note</th>
+                <th scope="col"><span class="sr-only">Actions</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="tx in filteredTransactions" :key="tx.id">
+                <td class="tx-date fig">{{ formatDate(tx.timestamp) }}</td>
+                <td>
+                  <span class="tx-type" :class="`type-${tx.type.toLowerCase()}`">{{ tx.type }}</span>
+                </td>
+                <td class="tx-symbol">{{ tx.symbol || '-' }}</td>
+                <td class="num">{{ tx.qty !== undefined ? tx.qty.toFixed(2) : '-' }}</td>
+                <td class="num">{{ tx.price !== undefined ? `$${tx.price.toFixed(2)}` : '-' }}</td>
+                <td class="num">${{ tx.fee.toFixed(2) }}</td>
+                <td class="num">
+                  {{
+                    tx.qty !== undefined && tx.price !== undefined
+                      ? `$${(tx.qty * tx.price + tx.fee).toFixed(2)}`
+                      : '-'
+                  }}
+                </td>
+                <td class="tx-note">{{ tx.note || '-' }}</td>
+                <td class="tx-actions">
+                  <button
+                    type="button"
+                    class="icon-btn"
+                    :aria-label="`Delete ${tx.type} ${tx.symbol ?? ''} ${formatDate(tx.timestamp)}`"
+                    title="Delete"
+                    @click="handleDelete(tx.id)"
+                  >
+                    <Trash2 aria-hidden="true" />
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, reactive } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, computed, onMounted, reactive, watch } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
+import { Plus, X, Upload, Search, Trash2 } from 'lucide-vue-next'
 import { useAuthStore } from '@/stores/authStore'
 import { usePortfolioStore } from '@/stores/portfolioStore'
 import { useTransactionStore } from '@/stores/transactionStore'
 import { useAnalyticsStore } from '@/stores/analyticsStore'
 import { useToast } from '@/composables/useToast'
-import Card from '@/components/common/Card.vue'
+import TitleBlock from '@/components/pad/TitleBlock.vue'
+import EmptySheet from '@/components/pad/EmptySheet.vue'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import type { CreateTransactionRequest } from '@/services/api/schemas'
+import {
+  TRANSACTION_TYPES,
+  filterTransactions,
+  countByType,
+  filterFromQuery,
+  filterToQuery,
+  type TypeFilter
+} from '@/utils/transactionFilter'
 
 const router = useRouter()
+const route = useRoute()
 const authStore = useAuthStore()
 const portfolioStore = usePortfolioStore()
 const transactionStore = useTransactionStore()
@@ -223,7 +243,11 @@ const toast = useToast()
 
 const isLoading = ref(false)
 const showAddForm = ref(false)
-const filterType = ref('ALL')
+// 필터 상태는 URL 쿼리(?type=&q=)에 보존되어 새로고침/공유 시 유지된다
+const initialFilter = filterFromQuery(route.query)
+const filterType = ref<TypeFilter>(initialFilter.type)
+const searchQuery = ref(initialFilter.query)
+const typeOptions: TypeFilter[] = ['ALL', ...TRANSACTION_TYPES]
 const isImporting = ref(false)
 const importProgress = ref(0)
 const fileInputRef = ref<HTMLInputElement | null>(null)
@@ -248,11 +272,21 @@ const formData = reactive<{
 })
 
 // Computed
-const filteredTransactions = computed(() => {
-  if (filterType.value === 'ALL') {
-    return transactionStore.sortedTransactions
-  }
-  return transactionStore.sortedTransactions.filter((tx) => tx.type === filterType.value)
+const filteredTransactions = computed(() =>
+  filterTransactions(transactionStore.sortedTransactions, { type: filterType.value, query: searchQuery.value })
+)
+
+const typeCounts = computed(() => countByType(transactionStore.transactions))
+
+const isFiltered = computed(() => filterType.value !== 'ALL' || searchQuery.value.trim() !== '')
+
+function clearFilters() {
+  filterType.value = 'ALL'
+  searchQuery.value = ''
+}
+
+watch([filterType, searchQuery], () => {
+  router.replace({ query: filterToQuery({ type: filterType.value, query: searchQuery.value }) })
 })
 
 // 데이터 로드
@@ -425,292 +459,203 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.transactions-page {
-  min-height: 100vh;
-  background-color: var(--color-gray-50);
-  padding: var(--space-6);
+.entry {
+  margin-bottom: var(--space-12);
 }
 
-.transactions-container {
-  max-width: 1400px;
-  margin: 0 auto;
-}
-
-.transactions-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: var(--space-6);
-  flex-wrap: wrap;
-  gap: var(--space-4);
-}
-
-.transactions-header h1 {
-  margin: 0;
-  font-size: var(--font-size-3xl);
-  color: var(--color-text);
-}
-
-.header-actions {
-  display: flex;
-  gap: var(--space-3);
-}
-
-.btn-primary {
-  padding: var(--space-3) var(--space-6);
-  background-color: var(--color-primary-600);
-  color: white;
-  border: none;
-  border-radius: var(--border-radius-md);
-  font-weight: var(--font-weight-medium);
-  cursor: pointer;
-  transition: all var(--transition-base);
-  text-decoration: none;
-  display: inline-block;
-}
-
-.btn-primary:hover:not(:disabled) {
-  background-color: var(--color-primary-700);
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
-}
-
-.btn-primary:disabled {
-  background-color: var(--color-gray-400);
-  cursor: not-allowed;
-  transform: none;
-}
-
-.btn-secondary {
-  padding: var(--space-3) var(--space-6);
-  background-color: var(--color-gray-200);
-  color: var(--color-text);
-  border: none;
-  border-radius: var(--border-radius-md);
-  font-weight: var(--font-weight-medium);
-  cursor: pointer;
-  transition: all var(--transition-base);
-}
-
-.btn-secondary:hover {
-  background-color: var(--color-gray-300);
-}
-
-.btn-secondary:disabled {
-  background-color: var(--color-gray-300);
-  cursor: not-allowed;
-}
-
-.btn-delete {
-  padding: var(--space-1) var(--space-2);
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-size: var(--font-size-lg);
-  transition: transform var(--transition-base);
-}
-
-.btn-delete:hover {
-  transform: scale(1.2);
-}
-
-.visually-hidden {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
-}
-
-.empty-state {
-  text-align: center;
-  padding: var(--space-16) var(--space-8);
-}
-
-.empty-state p {
-  font-size: var(--font-size-lg);
-  color: var(--color-text-muted);
-  margin-bottom: var(--space-6);
-}
-
-.transactions-content {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-6);
-}
-
-.add-form h2 {
-  margin: 0;
-  font-size: var(--font-size-xl);
-}
-
-.transaction-form {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
-}
-
-.form-row {
+.entry-line {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
   gap: var(--space-4);
+  align-items: end;
+  padding-bottom: var(--space-5);
+  border-bottom: 3px double var(--rule-strong);
 }
 
-.form-group {
+.f-date {
+  min-width: 13rem;
+}
+
+.f-note {
+  grid-column: span 2;
+}
+
+.entry-actions {
   display: flex;
-  flex-direction: column;
   gap: var(--space-2);
-}
-
-.form-group label {
-  font-weight: var(--font-weight-medium);
-  font-size: var(--font-size-sm);
-  color: var(--color-text);
-}
-
-.form-group input,
-.form-group select,
-.form-group textarea {
-  padding: var(--space-3);
-  border: 1px solid var(--color-border);
-  border-radius: var(--border-radius-md);
-  font-size: var(--font-size-base);
-  transition: all var(--transition-base);
-}
-
-.form-group input:focus,
-.form-group select:focus,
-.form-group textarea:focus {
-  outline: none;
-  border-color: var(--color-primary-500);
-  box-shadow: 0 0 0 3px var(--color-primary-100);
-}
-
-.form-actions {
-  display: flex;
-  gap: var(--space-3);
+  align-items: center;
 }
 
 .error-message {
-  color: var(--color-error-600);
-  font-size: var(--font-size-sm);
-  padding: var(--space-2);
-  background-color: var(--color-error-50);
-  border-radius: var(--border-radius-md);
+  grid-column: 1 / -1;
   margin: 0;
+  color: var(--red-pencil);
+  font-size: var(--text-sm);
 }
 
-.list-header {
+.filter-bar {
   display: flex;
-  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-4);
   align-items: center;
+  margin-bottom: var(--space-4);
 }
 
-.list-header h2 {
-  margin: 0;
-  font-size: var(--font-size-xl);
+.search {
+  position: relative;
+  flex: 1 1 16rem;
+  max-width: 24rem;
 }
 
-.filter-select {
-  padding: var(--space-2) var(--space-3);
-  border: 1px solid var(--color-border);
-  border-radius: var(--border-radius-md);
-  font-size: var(--font-size-sm);
-  background-color: var(--color-background);
-  cursor: pointer;
+.search-icon {
+  position: absolute;
+  left: var(--space-3);
+  top: 50%;
+  width: 18px;
+  height: 18px;
+  transform: translateY(-50%);
+  color: var(--ink-2);
+  pointer-events: none;
 }
 
-.empty-message {
-  text-align: center;
-  padding: var(--space-8);
-  color: var(--color-text-muted);
+.search .input {
+  padding-left: var(--space-10);
 }
 
-.table-container {
-  overflow-x: auto;
+.type-seg {
+  display: inline-flex;
+  flex-wrap: wrap;
+  border: 1.5px solid var(--rule-strong);
 }
 
-.transactions-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.transactions-table th {
-  text-align: left;
-  padding: var(--space-3);
-  border-bottom: 2px solid var(--color-border);
-  font-weight: var(--font-weight-medium);
-  color: var(--color-text-muted);
-  font-size: var(--font-size-sm);
+.seg {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 44px;
+  padding: 0 var(--space-4);
+  font-family: var(--font-label);
+  font-weight: 600;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
+  color: var(--ink);
+}
+
+.seg + .seg {
+  border-left: 1px solid var(--rule);
+}
+
+.seg:hover {
+  background-color: var(--paper-sunk);
+}
+
+.seg[aria-pressed='true'] {
+  background-color: var(--ink);
+  color: var(--paper);
+}
+
+.seg-count {
+  font-size: var(--text-xs);
+  opacity: 0.8;
+}
+
+.filter-status {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0 0 var(--space-3);
+  font-size: var(--text-sm);
+  color: var(--ink-2);
 }
 
 .transactions-table td {
-  padding: var(--space-3);
-  border-bottom: 1px solid var(--color-border);
-  font-size: var(--font-size-sm);
-}
-
-.transactions-table tbody tr:hover {
-  background-color: var(--color-gray-50);
+  font-size: var(--text-sm);
 }
 
 .tx-date {
   white-space: nowrap;
+  color: var(--ink-2);
 }
 
-.tx-type-badge {
-  display: inline-block;
-  padding: var(--space-1) var(--space-2);
-  border-radius: var(--border-radius-sm);
-  font-size: var(--font-size-xs);
-  font-weight: var(--font-weight-bold);
-  text-transform: uppercase;
+.tx-type {
+  font-family: var(--font-label);
+  font-weight: 700;
+  letter-spacing: var(--tracking-label);
 }
 
-.badge-buy {
-  background-color: var(--color-success-100);
-  color: var(--color-success-700);
+.type-sell {
+  color: var(--red-pencil);
 }
 
-.badge-sell {
-  background-color: var(--color-error-100);
-  color: var(--color-error-700);
+.type-deposit,
+.type-withdraw {
+  color: var(--blue-pencil);
 }
 
-.badge-deposit,
-.badge-withdraw {
-  background-color: var(--color-info-100);
-  color: var(--color-info-700);
+.tx-symbol {
+  font-weight: 600;
 }
 
 .tx-note {
-  max-width: 200px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  max-width: 18rem;
+  color: var(--ink-2);
 }
 
-@media (max-width: 768px) {
-  .transactions-page {
-    padding: var(--space-4);
+.tx-actions {
+  width: 1%;
+  text-align: right;
+}
+
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  color: var(--ink-2);
+  border: 1px solid transparent;
+}
+
+.icon-btn:hover {
+  color: var(--red-pencil);
+  border-color: var(--red-pencil);
+}
+
+.icon-btn svg {
+  width: 18px;
+  height: 18px;
+}
+
+@media (max-width: 720px) {
+  .f-note {
+    grid-column: 1 / -1;
   }
 
-  .transactions-header {
-    flex-direction: column;
-    align-items: flex-start;
+  .entry-line {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .form-row {
-    grid-template-columns: 1fr;
+  .f-date {
+    grid-column: 1 / -1;
+    min-width: 0;
   }
 
-  .table-container {
-    font-size: var(--font-size-xs);
+  .entry-actions {
+    grid-column: 1 / -1;
+  }
+
+  .search {
+    max-width: none;
+  }
+
+  .type-seg {
+    width: 100%;
+  }
+
+  .seg {
+    flex: 1 1 auto;
+    justify-content: center;
+    padding: 0 var(--space-2);
   }
 }
 </style>

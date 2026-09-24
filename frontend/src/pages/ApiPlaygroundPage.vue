@@ -1,62 +1,71 @@
 <template>
-  <div class="playground-page">
-    <header>
-      <h1>API Playground</h1>
-      <p class="intro">Inspect the OpenAPI contract and exercise mock or live endpoints directly from the browser.</p>
-      <p class="mode-hint">Current backend mode: <strong>{{ configStore.backendMode.toUpperCase() }}</strong></p>
-    </header>
+  <div class="page playground-page">
+    <TitleBlock title="API Playground" sheet="App. A" sheet-label="Appendix">
+      Inspect the OpenAPI contract and exercise mock or live endpoints directly from the browser.
+      <template #actions>
+        <span class="mode-hint">
+          Current backend mode: <strong class="mode-chip" :class="{ live: configStore.backendMode === 'live' }">{{ configStore.backendMode.toUpperCase() }}</strong>
+        </span>
+      </template>
+    </TitleBlock>
 
     <section class="content">
-      <aside class="sidebar">
-        <h2>Endpoints</h2>
-        <ul>
-          <li
-            v-for="operation in operations"
-            :key="operation.operationId"
-            :class="{ active: selectedOperation?.operationId === operation.operationId }"
-          >
-            <button type="button" @click="selectOperation(operation)">
-              <span class="method" :class="operation.method">{{ operation.method }}</span>
-              <span class="path">{{ operation.path }}</span>
+      <aside class="sidebar" aria-labelledby="endpoints-heading">
+        <div class="block-head">
+          <h2 id="endpoints-heading">Endpoints</h2>
+          <span class="fig muted">{{ operations.length }}</span>
+        </div>
+        <p v-if="operations.length === 0" class="muted">Loading OpenAPI spec…</p>
+        <ul class="endpoint-list">
+          <li v-for="operation in operations" :key="operation.operationId">
+            <button
+              type="button"
+              class="endpoint"
+              :aria-current="selectedOperation?.operationId === operation.operationId ? 'true' : undefined"
+              @click="selectOperation(operation)"
+            >
+              <span class="method" :class="operation.method.toLowerCase()">{{ operation.method }}</span>
+              <span class="path fig">{{ operation.path }}</span>
             </button>
           </li>
         </ul>
       </aside>
 
-      <main class="details" v-if="selectedOperation">
+      <div v-if="selectedOperation" class="details">
         <header class="details-header">
           <h2>{{ selectedOperation.summary }}</h2>
           <code>{{ selectedOperation.method.toUpperCase() }} {{ selectedOperation.path }}</code>
         </header>
 
-        <section class="request-section">
-          <h3>Request</h3>
+        <section class="request-section" aria-labelledby="request-heading">
+          <h3 id="request-heading" class="label">Request</h3>
           <div v-if="pathParamsKeys.length" class="param-grid">
-            <label v-for="param in pathParamsKeys" :key="param">
-              <span>{{ param }}</span>
-              <input v-model="pathParams[param]" type="text" />
-            </label>
+            <div v-for="param in pathParamsKeys" :key="param" class="field">
+              <label :for="`param-${param}`">{{ param }}</label>
+              <input :id="`param-${param}`" v-model="pathParams[param]" type="text" />
+            </div>
           </div>
 
-          <div v-if="selectedOperation.requiresBody" class="body-editor">
-            <label>Request Body (JSON)</label>
-            <textarea v-model="requestPayload" rows="10"></textarea>
+          <div v-if="selectedOperation.requiresBody" class="field body-editor">
+            <label for="request-body">Request Body (JSON)</label>
+            <textarea id="request-body" v-model="requestPayload" rows="10" spellcheck="false"></textarea>
           </div>
 
-          <button class="btn-primary" :disabled="isExecuting" @click="execute">
+          <button class="btn btn--primary" :disabled="isExecuting" @click="execute">
+            <Send aria-hidden="true" />
             {{ isExecuting ? 'Executing...' : 'Execute' }}
           </button>
         </section>
 
-        <section class="response-section" v-if="response">
-          <h3>Response ({{ response.status }})</h3>
+        <section v-if="response" class="response-section" aria-labelledby="response-heading" aria-live="polite">
+          <h3 id="response-heading" class="label">Response (<span class="fig">{{ response.status }}</span>)</h3>
           <pre>{{ responseBody }}</pre>
         </section>
-      </main>
+      </div>
 
-      <main class="details" v-else>
-        <p>Select an endpoint to view details and execute it.</p>
-      </main>
+      <div v-else class="details details-empty">
+        <EmptySheet compact>Select an endpoint to view details and execute it.</EmptySheet>
+      </div>
     </section>
   </div>
 </template>
@@ -68,6 +77,9 @@ import { useAuthStore } from '@/stores/authStore'
 import { usePortfolioStore } from '@/stores/portfolioStore'
 import { apiClient } from '@/services/api'
 import { useToast } from '@/composables/useToast'
+import { Send } from 'lucide-vue-next'
+import TitleBlock from '@/components/pad/TitleBlock.vue'
+import EmptySheet from '@/components/pad/EmptySheet.vue'
 
 interface ApiOperation {
   method: string
@@ -311,177 +323,136 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.playground-page {
-  min-height: 100vh;
-  padding: var(--space-6);
-  background-color: var(--color-gray-50);
-}
-
-header {
-  margin-bottom: var(--space-6);
-}
-
-header h1 {
-  margin: 0;
-  font-size: var(--font-size-3xl);
-}
-
-.intro {
-  color: var(--color-text-muted);
-}
-
 .mode-hint {
-  margin-top: var(--space-2);
-  color: var(--color-primary-600);
+  font-size: var(--text-sm);
+  color: var(--ink-2);
+}
+
+.mode-chip {
+  font-family: var(--font-label);
+  font-weight: 700;
+  letter-spacing: var(--tracking-label);
+  padding: 1px 6px;
+  border: 1px solid currentColor;
+  color: var(--ink);
+}
+
+.mode-chip.live {
+  background-color: var(--highlight);
+  color: var(--highlight-ink);
+  border-color: var(--highlight);
 }
 
 .content {
   display: grid;
-  grid-template-columns: 280px 1fr;
-  gap: var(--space-4);
+  grid-template-columns: minmax(0, 22rem) minmax(0, 1fr);
+  gap: var(--space-10);
+  align-items: start;
 }
 
-.sidebar {
-  background-color: var(--color-background);
-  border-radius: var(--border-radius-xl);
-  box-shadow: var(--shadow-sm);
-  padding: var(--space-4);
-  overflow-y: auto;
-  max-height: 70vh;
-}
-
-.sidebar ul {
+.endpoint-list {
   list-style: none;
-  padding: 0;
-  margin: var(--space-3) 0 0;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
 }
 
-.sidebar li button {
+.endpoint {
+  display: grid;
+  grid-template-columns: 4.25rem minmax(0, 1fr);
+  gap: var(--space-2);
+  align-items: baseline;
   width: 100%;
-  background: none;
-  border: none;
+  min-height: 44px;
+  padding: var(--space-2) var(--space-2);
   text-align: left;
-  padding: var(--space-2);
-  border-radius: var(--border-radius-md);
-  cursor: pointer;
-  display: flex;
-  gap: var(--space-2);
-  align-items: center;
+  border-bottom: 1px solid var(--rule);
 }
 
-.sidebar li.active button,
-.sidebar li button:hover {
-  background-color: var(--color-primary-100);
+.endpoint:hover {
+  background-color: var(--paper-sunk);
+}
+
+.endpoint[aria-current='true'] {
+  background-color: var(--ink);
+  color: var(--paper);
+}
+
+.endpoint[aria-current='true'] .method {
+  color: inherit;
 }
 
 .method {
-  display: inline-block;
-  padding: var(--space-1) var(--space-2);
-  border-radius: var(--border-radius-sm);
-  font-size: var(--font-size-xs);
-  font-weight: var(--font-weight-semibold);
-  text-transform: uppercase;
-  color: #fff;
+  font-family: var(--font-label);
+  font-weight: 700;
+  font-size: var(--text-sm);
+  letter-spacing: var(--tracking-label);
 }
 
-.method.GET {
-  background-color: #22c55e;
+.method.get {
+  color: var(--blue-pencil);
 }
 
-.method.POST {
-  background-color: #3b82f6;
+.method.delete {
+  color: var(--red-pencil);
 }
 
 .path {
-  font-family: var(--font-family-mono);
-  color: var(--color-text);
+  font-size: var(--text-sm);
+  overflow-wrap: anywhere;
 }
 
 .details {
-  background-color: var(--color-background);
-  border-radius: var(--border-radius-xl);
-  box-shadow: var(--shadow-md);
-  padding: var(--space-5);
-  min-height: 60vh;
+  min-width: 0;
 }
 
 .details-header {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-  margin-bottom: var(--space-4);
+  padding-bottom: var(--space-3);
+  margin-bottom: var(--space-6);
+  border-bottom: 2px solid var(--rule-strong);
+}
+
+.details-header h2 {
+  margin-bottom: var(--space-2);
 }
 
 .details-header code {
-  background-color: var(--color-gray-100);
-  padding: var(--space-1) var(--space-2);
-  border-radius: var(--border-radius-sm);
-  font-family: var(--font-family-mono);
+  overflow-wrap: anywhere;
+}
+
+.request-section,
+.response-section {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-4);
+}
+
+.response-section {
+  margin-top: var(--space-10);
+}
+
+.response-section pre {
+  width: 100%;
+  max-height: 32rem;
 }
 
 .param-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-  gap: var(--space-3);
-  margin-bottom: var(--space-4);
-}
-
-.param-grid label {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-  font-size: var(--font-size-sm);
-}
-
-.param-grid input,
-.body-editor textarea {
-  padding: var(--space-2);
-  border: 1px solid var(--color-border);
-  border-radius: var(--border-radius-md);
-  font-family: var(--font-family-mono);
+  grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
+  gap: var(--space-4);
+  width: 100%;
 }
 
 .body-editor {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-  margin-bottom: var(--space-4);
+  width: 100%;
 }
 
-.btn-primary {
-  padding: var(--space-3) var(--space-6);
-  background-color: var(--color-primary-600);
-  color: #fff;
-  border: none;
-  border-radius: var(--border-radius-md);
-  font-weight: var(--font-weight-medium);
-  cursor: pointer;
-  transition: all var(--transition-base);
+.body-editor textarea {
+  font-family: var(--font-figure);
+  font-size: var(--text-sm);
 }
 
-.btn-primary:disabled {
-  background-color: var(--color-gray-400);
-  cursor: not-allowed;
-}
-
-.response-section pre {
-  background-color: #0f172a;
-  color: #e2e8f0;
-  padding: var(--space-4);
-  border-radius: var(--border-radius-lg);
-  overflow-x: auto;
-}
-
-@media (max-width: 960px) {
+@media (max-width: 900px) {
   .content {
-    grid-template-columns: 1fr;
-  }
-
-  .sidebar {
-    max-height: none;
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 </style>
