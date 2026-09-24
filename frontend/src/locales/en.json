@@ -9,7 +9,8 @@
     "save": "Save",
     "cancel": "Cancel",
     "confirm": "Confirm",
-    "close": "Close"
+    "close": "Close",
+    "disclaimer": "Educational simulation. No real money."
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -27,7 +28,12 @@
     "liveConnecting": "Attempting to connect to Live API mode.",
     "language": "Language",
     "korean": "한국어",
-    "english": "English"
+    "english": "English",
+    "primary": "Primary",
+    "menu": "Menu",
+    "apiPlayground": "API Playground",
+    "docs": "Docs",
+    "settings": "Settings"
   },
   "login": {
     "title": "FinLab",
@@ -65,12 +71,24 @@
     "noTransactions": "No transactions yet.",
     "loadingPortfolio": "Loading portfolio data...",
     "pleaseLogin": "Please login to view your portfolio",
-    "goToLogin": "Go to Login"
+    "goToLogin": "Go to Login",
+    "weight": "Weight",
+    "sharesUnit": "shares"
   },
   "transactions": {
     "buy": "BUY",
     "sell": "SELL",
     "deposit": "DEPOSIT",
     "withdraw": "WITHDRAW"
+  },
+  "toast": {
+    "info": "Note",
+    "success": "Done",
+    "warning": "Check",
+    "error": "Error"
+  },
+  "pad": {
+    "subject": "Subject",
+    "sheet": "Sheet"
   }
 }
