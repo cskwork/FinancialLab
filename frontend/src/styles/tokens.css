@@ -1,168 +1,162 @@
 /**
  * Design Tokens - FinLab
- * 디자인 시스템 변수 정의
+ * World: engineer's green-tint computation pad (light) / blueprint (dark).
+ * See DESIGN.md at the repo root for the rules behind these values.
  */
 
 :root {
-  /* ========== Colors ========== */
+  color-scheme: light dark;
 
-  /* Primary - Brand */
-  --color-primary-50: #eff6ff;
-  --color-primary-100: #dbeafe;
-  --color-primary-200: #bfdbfe;
-  --color-primary-300: #93c5fd;
-  --color-primary-400: #60a5fa;
-  --color-primary-500: #3b82f6;
-  --color-primary-600: #2563eb;
-  --color-primary-700: #1d4ed8;
-  --color-primary-800: #1e40af;
-  --color-primary-900: #1e3a8a;
+  /* ========== Pad material ========== */
+  --paper: #e5eed8;            /* green-tint pad sheet */
+  --paper-raised: #eef4e5;     /* fields, code, raised slips */
+  --paper-sunk: #d8e4c8;       /* hover rows, pressed */
+  --binding: #1c2a21;          /* glued binding strip at the top of the pad */
+  --binding-ink: #e5eed8;
+  --binding-muted: #a9bb9d;
 
-  /* Semantic - Success/Error/Warning */
-  --color-success-500: #10b981;
-  --color-success-600: #059669;
-  --color-error-500: #ef4444;
-  --color-error-600: #dc2626;
-  --color-warning-500: #f59e0b;
-  --color-warning-600: #d97706;
-  --color-info-500: #3b82f6;
-  --color-info-600: #2563eb;
+  --grid-minor: rgb(62 104 70 / 0.10);
+  --grid-major: rgb(62 104 70 / 0.20);
+  --grid-size: 20px;
 
-  /* Neutral - Grayscale */
-  --color-gray-50: #f9fafb;
-  --color-gray-100: #f3f4f6;
-  --color-gray-200: #e5e7eb;
-  --color-gray-300: #d1d5db;
-  --color-gray-400: #9ca3af;
-  --color-gray-500: #6b7280;
-  --color-gray-600: #4b5563;
-  --color-gray-700: #374151;
-  --color-gray-800: #1f2937;
-  --color-gray-900: #111827;
+  --ink: #1b221e;              /* graphite, primary text */
+  --ink-2: #435047;            /* secondary text */
+  --ink-3: #56645a;            /* tertiary, placeholders (>=4.5:1 on paper) */
+  --rule: #9fb391;             /* printed ruling */
+  --rule-strong: #1b221e;      /* inked rule */
 
-  /* ========== Typography ========== */
+  --red-pencil: #a8231b;       /* losses, destructive, corrections */
+  --blue-pencil: #1d4a94;      /* second series, links */
+  --highlight: #f1df4f;        /* highlighter: only on the boxed answer */
+  --highlight-ink: #1b221e;
+  --focus: #1d4a94;
 
-  --font-family-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  --font-family-mono: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, monospace;
+  /* ========== Type ========== */
+  --font-label: 'Barlow Condensed', 'Arial Narrow', system-ui, sans-serif;
+  --font-figure: 'Azeret Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+  --font-body: system-ui, -apple-system, 'Apple SD Gothic Neo', 'Noto Sans KR', 'Segoe UI', sans-serif;
 
-  --font-size-xs: 0.75rem;     /* 12px */
-  --font-size-sm: 0.875rem;    /* 14px */
-  --font-size-base: 1rem;      /* 16px */
-  --font-size-lg: 1.125rem;    /* 18px */
-  --font-size-xl: 1.25rem;     /* 20px */
-  --font-size-2xl: 1.5rem;     /* 24px */
-  --font-size-3xl: 1.875rem;   /* 30px */
-  --font-size-4xl: 2.25rem;    /* 36px */
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.375rem;
+  --text-2xl: 1.75rem;
+  --text-3xl: clamp(2rem, 1.4rem + 2vw, 2.75rem);
+  --text-display: clamp(3.5rem, 2rem + 6vw, 6rem);
 
+  --tracking-label: 0.08em;
+
+  /* ========== Space (multiples of the 4px pencil step; grid cell = 20px) ========== */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+  --space-20: 5rem;
+
+  --page-max: 1320px;
+  --measure: 68ch;
+
+  /* ========== Motion ========== */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --dur-fast: 140ms;
+  --dur-base: 220ms;
+  --dur-draw: 1100ms;
+
+  /* ========== Chart series ========== */
+  --series-1: var(--ink);
+  --series-2: var(--blue-pencil);
+  --series-invested: var(--ink-3);
+
+  /* ========== Legacy aliases (older components still read these) ========== */
+  --color-background: var(--paper);
+  --color-surface: var(--paper-raised);
+  --color-text: var(--ink);
+  --color-text-muted: var(--ink-2);
+  --color-border: var(--rule);
+  --color-divider: var(--rule);
+  --color-hover: var(--paper-sunk);
+  --color-active: var(--paper-sunk);
+  --color-focus-ring: var(--focus);
+  --color-gain: var(--ink);
+  --color-loss: var(--red-pencil);
+  --color-neutral: var(--ink-2);
+  --color-primary-50: var(--paper-raised);
+  --color-primary-100: var(--paper-sunk);
+  --color-primary-500: var(--blue-pencil);
+  --color-primary-600: var(--ink);
+  --color-primary-700: var(--ink);
+  --color-gray-50: var(--paper);
+  --color-gray-100: var(--paper-raised);
+  --color-gray-200: var(--paper-sunk);
+  --color-gray-300: var(--rule);
+  --color-gray-400: var(--ink-3);
+  --color-success-600: var(--ink);
+  --color-error-50: var(--paper-raised);
+  --color-error-600: var(--red-pencil);
+  --color-warning-600: #6e5200;
+  --color-info-600: var(--blue-pencil);
+  --font-family-sans: var(--font-body);
+  --font-family-mono: var(--font-figure);
+  --font-size-xs: var(--text-xs);
+  --font-size-sm: var(--text-sm);
+  --font-size-base: var(--text-base);
+  --font-size-lg: var(--text-lg);
+  --font-size-xl: var(--text-xl);
+  --font-size-2xl: var(--text-2xl);
+  --font-size-3xl: var(--text-3xl);
+  --font-size-4xl: var(--text-3xl);
   --font-weight-normal: 400;
   --font-weight-medium: 500;
   --font-weight-semibold: 600;
   --font-weight-bold: 700;
-
-  --line-height-tight: 1.25;
-  --line-height-normal: 1.5;
-  --line-height-relaxed: 1.75;
-
-  /* ========== Spacing ========== */
-
-  --space-1: 0.25rem;   /* 4px */
-  --space-2: 0.5rem;    /* 8px */
-  --space-3: 0.75rem;   /* 12px */
-  --space-4: 1rem;      /* 16px */
-  --space-5: 1.25rem;   /* 20px */
-  --space-6: 1.5rem;    /* 24px */
-  --space-8: 2rem;      /* 32px */
-  --space-10: 2.5rem;   /* 40px */
-  --space-12: 3rem;     /* 48px */
-  --space-16: 4rem;     /* 64px */
-
-  /* ========== Sizing ========== */
-
-  --width-xs: 20rem;    /* 320px */
-  --width-sm: 24rem;    /* 384px */
-  --width-md: 28rem;    /* 448px */
-  --width-lg: 32rem;    /* 512px */
-  --width-xl: 36rem;    /* 576px */
-  --width-2xl: 42rem;   /* 672px */
-  --width-full: 100%;
-
-  /* ========== Border ========== */
-
-  --border-width-1: 1px;
-  --border-width-2: 2px;
-  --border-width-4: 4px;
-
-  --border-radius-sm: 0.125rem;   /* 2px */
-  --border-radius-base: 0.25rem;  /* 4px */
-  --border-radius-md: 0.375rem;   /* 6px */
-  --border-radius-lg: 0.5rem;     /* 8px */
-  --border-radius-xl: 0.75rem;    /* 12px */
-  --border-radius-2xl: 1rem;      /* 16px */
-  --border-radius-full: 9999px;
-
-  /* ========== Shadow ========== */
-
-  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-  --shadow-base: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
-  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
-
-  /* ========== Z-Index ========== */
-
-  --z-index-dropdown: 1000;
-  --z-index-sticky: 1020;
-  --z-index-fixed: 1030;
-  --z-index-modal-backdrop: 1040;
-  --z-index-modal: 1050;
-  --z-index-popover: 1060;
-  --z-index-tooltip: 1070;
-
-  /* ========== Transitions ========== */
-
-  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-base: 200ms cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-slow: 300ms cubic-bezier(0.4, 0, 0.2, 1);
-
-  /* ========== Application-specific ========== */
-
-  /* Financial colors */
-  --color-gain: var(--color-success-600);
-  --color-loss: var(--color-error-600);
-  --color-neutral: var(--color-gray-600);
-
-  /* Component defaults */
-  --color-background: white;
-  --color-surface: var(--color-gray-50);
-  --color-text: var(--color-gray-900);
-  --color-text-muted: var(--color-gray-600);
-  --color-border: var(--color-gray-300);
-  --color-divider: var(--color-gray-200);
-
-  /* Interactive states */
-  --color-hover: var(--color-gray-100);
-  --color-active: var(--color-gray-200);
-  --color-focus-ring: var(--color-primary-500);
-
-  /* Charts */
-  --chart-color-1: #3b82f6;
-  --chart-color-2: #10b981;
-  --chart-color-3: #f59e0b;
-  --chart-color-4: #ef4444;
-  --chart-color-5: #8b5cf6;
-  --chart-color-6: #ec4899;
+  --line-height-tight: 1.2;
+  --line-height-normal: 1.55;
+  --border-radius-sm: 0;
+  --border-radius-md: 0;
+  --border-radius-lg: 0;
+  --border-radius-xl: 0;
+  --border-radius-full: 0;
+  --shadow-sm: none;
+  --shadow-md: none;
+  --shadow-lg: 0 8px 24px -8px rgb(27 34 30 / 0.25);
+  --transition-fast: var(--dur-fast) var(--ease-out);
+  --transition-base: var(--dur-base) var(--ease-out);
 }
 
-/* ========== Dark Mode (optional future enhancement) ========== */
+/* ========== Blueprint: the same pad after it goes to the print room ========== */
 @media (prefers-color-scheme: dark) {
   :root {
-    --color-background: var(--color-gray-900);
-    --color-surface: var(--color-gray-800);
-    --color-text: var(--color-gray-50);
-    --color-text-muted: var(--color-gray-400);
-    --color-border: var(--color-gray-700);
-    --color-divider: var(--color-gray-800);
-    --color-hover: var(--color-gray-700);
-    --color-active: var(--color-gray-600);
+    --paper: #0f3257;
+    --paper-raised: #154072;
+    --paper-sunk: #0b2847;
+    --binding: #081d35;
+    --binding-ink: #eaf2fb;
+    --binding-muted: #9db6d3;
+
+    --grid-minor: rgb(234 242 251 / 0.07);
+    --grid-major: rgb(234 242 251 / 0.14);
+
+    --ink: #f1f6fc;
+    --ink-2: #c3d4e8;
+    --ink-3: #a3bad5;
+    --rule: rgb(234 242 251 / 0.32);
+    --rule-strong: #f1f6fc;
+
+    --red-pencil: #ffb0a3;
+    --blue-pencil: #ffe38a;      /* second series reads as chalk yellow on blueprint */
+    --highlight: #ffe38a;
+    --highlight-ink: #0b2340;
+    --focus: #ffe38a;
+
+    --series-invested: #8fb0d6;
+    --color-warning-600: #ffe38a;
+    --shadow-lg: 0 8px 24px -8px rgb(0 0 0 / 0.5);
   }
 }

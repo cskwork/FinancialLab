@@ -1,0 +1,85 @@
+{
+  "transactions": [
+    {
+      "type": "DEPOSIT",
+      "fee": 0,
+      "timestamp": "2024-01-02T09:00:00.000Z",
+      "note": "Initial deposit"
+    },
+    {
+      "type": "BUY",
+      "symbol": "AAPL",
+      "qty": 50,
+      "price": 185.64,
+      "fee": 2.5,
+      "timestamp": "2024-01-02T14:30:00.000Z",
+      "note": "첫 AAPL 매수"
+    },
+    {
+      "type": "BUY",
+      "symbol": "SPY",
+      "qty": 20,
+      "price": 476.24,
+      "fee": 1.5,
+      "timestamp": "2024-01-02T15:00:00.000Z",
+      "note": "SPY ETF 매수"
+    },
+    {
+      "type": "DEPOSIT",
+      "fee": 0,
+      "timestamp": "2024-02-01T09:00:00.000Z",
+      "note": "추가 입금"
+    },
+    {
+      "type": "BUY",
+      "symbol": "AAPL",
+      "qty": 25,
+      "price": 194.50,
+      "fee": 1.5,
+      "timestamp": "2024-02-01T14:30:00.000Z",
+      "note": "AAPL 추가 매수"
+    },
+    {
+      "type": "BUY",
+      "symbol": "SPY",
+      "qty": 15,
+      "price": 483.44,
+      "fee": 1.0,
+      "timestamp": "2024-02-02T10:00:00.000Z",
+      "note": "SPY 추가 매수"
+    },
+    {
+      "type": "SELL",
+      "symbol": "AAPL",
+      "qty": 15,
+      "price": 201.20,
+      "fee": 1.5,
+      "timestamp": "2024-03-04T11:30:00.000Z",
+      "note": "AAPL 부분 매도"
+    },
+    {
+      "type": "BUY",
+      "symbol": "AAPL",
+      "qty": 30,
+      "price": 206.28,
+      "fee": 2.0,
+      "timestamp": "2024-03-14T14:00:00.000Z",
+      "note": "AAPL 재매수"
+    },
+    {
+      "type": "SELL",
+      "symbol": "SPY",
+      "qty": 10,
+      "price": 507.77,
+      "fee": 1.0,
+      "timestamp": "2024-03-21T13:00:00.000Z",
+      "note": "SPY 부분 매도"
+    },
+    {
+      "type": "WITHDRAW",
+      "fee": 0,
+      "timestamp": "2024-03-25T16:00:00.000Z",
+      "note": "출금"
+    }
+  ]
+}

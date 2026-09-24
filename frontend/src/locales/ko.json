@@ -9,7 +9,8 @@
     "save": "저장",
     "cancel": "취소",
     "confirm": "확인",
-    "close": "닫기"
+    "close": "닫기",
+    "disclaimer": "교육용 시뮬레이션입니다. 실제 돈은 사용되지 않습니다."
   },
   "nav": {
     "dashboard": "대시보드",
@@ -27,7 +28,12 @@
     "liveConnecting": "Live API 모드로 연결을 시도합니다.",
     "language": "언어",
     "korean": "한국어",
-    "english": "English"
+    "english": "English",
+    "primary": "주 메뉴",
+    "menu": "메뉴",
+    "apiPlayground": "API 플레이그라운드",
+    "docs": "문서",
+    "settings": "설정"
   },
   "login": {
     "title": "FinLab",
@@ -65,12 +71,24 @@
     "noTransactions": "아직 거래가 없습니다.",
     "loadingPortfolio": "포트폴리오 데이터를 로딩 중...",
     "pleaseLogin": "포트폴리오를 보려면 로그인하세요",
-    "goToLogin": "로그인하러 가기"
+    "goToLogin": "로그인하러 가기",
+    "weight": "비중",
+    "sharesUnit": "주"
   },
   "transactions": {
     "buy": "매수",
     "sell": "매도",
     "deposit": "입금",
     "withdraw": "출금"
+  },
+  "toast": {
+    "info": "알림",
+    "success": "완료",
+    "warning": "확인",
+    "error": "오류"
+  },
+  "pad": {
+    "subject": "주제",
+    "sheet": "시트"
   }
 }

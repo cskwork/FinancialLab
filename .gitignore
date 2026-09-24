@@ -105,6 +105,11 @@ dist
 # Gatsby files
 .cache/
 public
+# ...but the Vite app's static assets (seed data, docs, images) are source
+!frontend/public/
+
+# Impeccable review captures (regenerated per run)
+.impeccable/review/
 
 # Storybook build outputs
 .out
