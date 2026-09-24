@@ -14,6 +14,11 @@ if (typeof window !== 'undefined') {
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import { watch } from 'vue'
+import '@fontsource/barlow-condensed/500.css'
+import '@fontsource/barlow-condensed/600.css'
+import '@fontsource/barlow-condensed/700.css'
+import '@fontsource/azeret-mono/400.css'
+import '@fontsource/azeret-mono/600.css'
 import './styles/tokens.css'
 import './styles/global.css'
 import App from './App.vue'
@@ -45,11 +50,13 @@ app.use(i18n)
 // i18n과 configStore의 locale 동기화
 // @ts-ignore - vue-i18n 타입 이슈
 i18n.global.locale.value = configStore.locale
+document.documentElement.lang = configStore.locale
 
 // configStore의 locale 변경을 감시하여 i18n과 동기화
 watch(() => configStore.locale, (newLocale) => {
   // @ts-ignore - vue-i18n 타입 이슈
   i18n.global.locale.value = newLocale
+  document.documentElement.lang = newLocale
 })
 
 app.mount('#app')

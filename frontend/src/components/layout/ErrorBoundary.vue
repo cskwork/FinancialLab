@@ -5,8 +5,8 @@
       <h1>문제가 발생했습니다</h1>
       <p class="message">{{ errorMessage }}</p>
       <div class="actions">
-        <button type="button" class="btn-retry" @click="handleRetry">다시 시도</button>
-        <button type="button" class="btn-home" @click="goHome">대시보드로 이동</button>
+        <button type="button" class="btn btn--primary" @click="handleRetry">다시 시도</button>
+        <button type="button" class="btn" @click="goHome">대시보드로 이동</button>
       </div>
     </div>
   </div>
@@ -73,7 +73,7 @@ onErrorCaptured((err) => {
 .error-fallback h1 {
   margin: 0;
   font-size: var(--font-size-3xl);
-  color: var(--color-error-600);
+  color: var(--red-pencil);
 }
 
 .message {
@@ -86,33 +86,5 @@ onErrorCaptured((err) => {
   gap: var(--space-4);
   flex-wrap: wrap;
   justify-content: center;
-}
-
-.btn-retry,
-.btn-home {
-  padding: var(--space-3) var(--space-6);
-  border-radius: var(--border-radius-md);
-  border: none;
-  font-weight: var(--font-weight-medium);
-  cursor: pointer;
-  transition: all var(--transition-base);
-}
-
-.btn-retry {
-  background-color: var(--color-primary-600);
-  color: #fff;
-}
-
-.btn-retry:hover {
-  background-color: var(--color-primary-700);
-}
-
-.btn-home {
-  background-color: var(--color-gray-200);
-  color: var(--color-text);
-}
-
-.btn-home:hover {
-  background-color: var(--color-gray-300);
 }
 </style>

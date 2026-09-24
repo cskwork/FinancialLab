@@ -1,165 +1,150 @@
 <template>
-  <div class="dashboard-page">
-    <div class="dashboard-container">
-      <header class="dashboard-header">
-        <div>
-          <h1>{{ t('dashboard.title') }}</h1>
-          <p v-if="portfolioStore.currentPortfolio" class="portfolio-name">
-            {{ portfolioStore.currentPortfolio.name }}
-          </p>
-        </div>
-
-        <div class="portfolio-selector" v-if="portfolioStore.portfolios.length > 0">
-          <label for="portfolio-select">{{ t('dashboard.portfolio') }}:</label>
-          <select
-            id="portfolio-select"
-            v-model="selectedPortfolioId"
-            @change="handlePortfolioChange"
-          >
-            <option
-              v-for="portfolio in portfolioStore.portfolios"
-              :key="portfolio.id"
-              :value="portfolio.id"
-            >
+  <div class="page dashboard-page">
+    <TitleBlock :title="t('dashboard.title')" sheet="01 / 04" :sheet-label="t('pad.sheet')">
+      <template v-if="portfolioStore.currentPortfolio" #default>
+        {{ portfolioStore.currentPortfolio.name }}
+      </template>
+      <template v-if="portfolioStore.portfolios.length > 0" #actions>
+        <div class="field portfolio-selector">
+          <label for="portfolio-select">{{ t('dashboard.portfolio') }}</label>
+          <select id="portfolio-select" v-model="selectedPortfolioId" @change="handlePortfolioChange">
+            <option v-for="portfolio in portfolioStore.portfolios" :key="portfolio.id" :value="portfolio.id">
               {{ portfolio.name }} ({{ portfolio.baseCurrency }})
             </option>
           </select>
         </div>
-      </header>
+      </template>
+    </TitleBlock>
 
-      <LoadingSpinner v-if="isLoading" fullscreen :message="t('dashboard.loadingPortfolio')" />
+    <LoadingSpinner v-if="isLoading" fullscreen :message="t('dashboard.loadingPortfolio')" />
 
-      <div v-else-if="!authStore.isAuthenticated" class="empty-state">
-        <p>{{ t('dashboard.pleaseLogin') }}</p>
-        <router-link to="/login" class="btn-primary">{{ t('dashboard.goToLogin') }}</router-link>
-      </div>
+    <EmptySheet v-else-if="!authStore.isAuthenticated">
+      {{ t('dashboard.pleaseLogin') }}
+      <template #action>
+        <router-link to="/login" class="btn btn--primary">{{ t('dashboard.goToLogin') }}</router-link>
+      </template>
+    </EmptySheet>
 
-      <div v-else-if="!portfolioStore.hasPortfolios" class="empty-state">
-        <p>{{ t('dashboard.noPortfolios') }}</p>
-        <button @click="createDemoPortfolio" class="btn-primary">{{ t('dashboard.createDemoPortfolio') }}</button>
-      </div>
+    <EmptySheet v-else-if="!portfolioStore.hasPortfolios">
+      {{ t('dashboard.noPortfolios') }}
+      <template #action>
+        <button type="button" class="btn btn--primary" @click="createDemoPortfolio">
+          {{ t('dashboard.createDemoPortfolio') }}
+        </button>
+      </template>
+    </EmptySheet>
 
-      <div v-else class="dashboard-content">
-        <!-- Summary Cards -->
-        <section class="summary-section">
-          <Card>
-            <template #header>
-              <h2>{{ t('dashboard.summary') }}</h2>
-            </template>
-            <div class="summary-grid">
-              <div class="summary-item">
-                <span class="summary-label">{{ t('dashboard.totalValue') }}</span>
-                <span class="summary-value">
-                  {{ portfolioMetrics ? `$${formatCurrency(portfolioMetrics.totalValue)}` : '--' }}
-                </span>
-              </div>
-              <div class="summary-item">
-                <span class="summary-label">{{ t('dashboard.totalHoldings') }}</span>
-                <span class="summary-value">{{ holdingsCount }}</span>
-              </div>
-              <div class="summary-item">
-                <span class="summary-label">{{ t('dashboard.totalTransactions') }}</span>
-                <span class="summary-value">{{ transactionStore.transactions.length }}</span>
-              </div>
-              <div class="summary-item">
-                <span class="summary-label">{{ t('dashboard.dailyPnL') }}</span>
-                <span class="summary-value" :class="{ positive: (portfolioMetrics?.pnlDaily ?? 0) > 0, negative: (portfolioMetrics?.pnlDaily ?? 0) < 0 }">
-                  {{
-                    portfolioMetrics
-                      ? `${portfolioMetrics.pnlDaily >= 0 ? '+' : '-'}$${formatCurrency(Math.abs(portfolioMetrics.pnlDaily))}`
-                      : '--'
-                  }}
-                </span>
-              </div>
-              <div class="summary-item">
-                <span class="summary-label">{{ t('dashboard.sharpeRatio') }}</span>
-                <span class="summary-value">{{ portfolioMetrics ? portfolioMetrics.sharpe.toFixed(2) : '--' }}</span>
-              </div>
-              <div class="summary-item">
-                <span class="summary-label">{{ t('dashboard.volatility') }}</span>
-                <span class="summary-value">{{ portfolioMetrics ? `${portfolioMetrics.volatility.toFixed(2)}%` : '--' }}</span>
-              </div>
-              <div class="summary-item">
-                <span class="summary-label">{{ t('dashboard.baseCurrency') }}</span>
-                <span class="summary-value">{{ portfolioStore.currentPortfolio?.baseCurrency }}</span>
-              </div>
-            </div>
-          </Card>
-        </section>
-
-        <!-- Holdings Table -->
-        <section class="holdings-section">
-          <Card>
-            <template #header>
-              <h2>{{ t('dashboard.currentHoldings') }}</h2>
-            </template>
-            <div v-if="holdings.length === 0" class="empty-message">
-              <p>{{ t('dashboard.noHoldings') }}</p>
-            </div>
-            <div v-else class="table-container">
-              <table class="holdings-table">
-                <thead>
-                  <tr>
-                    <th>{{ t('dashboard.symbol') }}</th>
-                    <th>{{ t('dashboard.shares') }}</th>
-                    <th>{{ t('dashboard.avgCost') }}</th>
-                    <th>{{ t('dashboard.marketValue') }}</th>
-                    <th>{{ t('dashboard.unrealizedPnL') }}</th>
-                    <th>{{ t('dashboard.updated') }}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="holding in holdings" :key="holding.symbol">
-                    <td class="symbol">{{ holding.symbol }}</td>
-                    <td>{{ holding.shares.toFixed(2) }}</td>
-                    <td>${{ holding.avgCost.toFixed(2) }}</td>
-                    <td>${{ formatCurrency(holding.marketValue) }}</td>
-                    <td :class="{ positive: holding.unrealizedPnL >= 0, negative: holding.unrealizedPnL < 0 }">
-                      {{ holding.unrealizedPnL >= 0 ? '+' : '-' }}${{
-                        formatCurrency(Math.abs(holding.unrealizedPnL))
-                      }}
-                    </td>
-                    <td>{{ formatDate(holding.lastUpdated) }}</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </Card>
-        </section>
-
-        <!-- Transactions Preview -->
-        <section class="transactions-preview">
-          <Card>
-            <template #header>
-              <div class="section-header">
-                <h2>{{ t('dashboard.recentTransactions') }}</h2>
-                <router-link to="/transactions" class="link-view-all">{{ t('dashboard.viewAll') }}</router-link>
-              </div>
-            </template>
-            <div v-if="transactionStore.sortedTransactions.length === 0" class="empty-message">
-              <p>{{ t('dashboard.noTransactions') }}</p>
-            </div>
-            <div v-else class="transactions-list">
-              <div
-                v-for="tx in recentTransactions"
-                :key="tx.id"
-                class="transaction-item"
-                :class="`tx-${tx.type.toLowerCase()}`"
+    <div v-else class="dashboard-content">
+      <div class="dash-grid">
+        <!-- Summary: the working, with the answer boxed -->
+        <section class="block summary-section" aria-labelledby="summary-heading">
+          <div class="block-head">
+            <h2 id="summary-heading">{{ t('dashboard.summary') }}</h2>
+          </div>
+          <div class="total">
+            <span class="label">{{ t('dashboard.totalValue') }}</span>
+            <span class="total-value fig">
+              <span class="answer">{{ portfolioMetrics ? `$${formatCurrency(portfolioMetrics.totalValue)}` : '--' }}</span>
+            </span>
+          </div>
+          <dl class="calc">
+            <div class="calc-row">
+              <dt>{{ t('dashboard.dailyPnL') }}</dt>
+              <dd
+                class="fig"
+                :class="{ positive: (portfolioMetrics?.pnlDaily ?? 0) > 0, negative: (portfolioMetrics?.pnlDaily ?? 0) < 0 }"
               >
-                <div class="tx-info">
-                  <span class="tx-type">{{ t(`transactions.${tx.type.toLowerCase()}`) }}</span>
-                  <span v-if="tx.symbol" class="tx-symbol">{{ tx.symbol }}</span>
-                  <span v-if="tx.qty" class="tx-qty">{{ tx.qty }} shares</span>
-                  <span v-if="tx.price" class="tx-price">${{ tx.price.toFixed(2) }}</span>
-                </div>
-                <div class="tx-date">
-                  {{ formatDate(tx.timestamp) }}
-                </div>
-              </div>
+                {{
+                  portfolioMetrics
+                    ? `${portfolioMetrics.pnlDaily >= 0 ? '+' : '-'}$${formatCurrency(Math.abs(portfolioMetrics.pnlDaily))}`
+                    : '--'
+                }}
+              </dd>
             </div>
-          </Card>
+            <div class="calc-row">
+              <dt>{{ t('dashboard.sharpeRatio') }}</dt>
+              <dd class="fig">{{ portfolioMetrics ? portfolioMetrics.sharpe.toFixed(2) : '--' }}</dd>
+            </div>
+            <div class="calc-row">
+              <dt>{{ t('dashboard.volatility') }}</dt>
+              <dd class="fig">{{ portfolioMetrics ? `${portfolioMetrics.volatility.toFixed(2)}%` : '--' }}</dd>
+            </div>
+            <div class="calc-row">
+              <dt>{{ t('dashboard.totalHoldings') }}</dt>
+              <dd class="fig">{{ holdingsCount }}</dd>
+            </div>
+            <div class="calc-row">
+              <dt>{{ t('dashboard.totalTransactions') }}</dt>
+              <dd class="fig">{{ transactionStore.transactions.length }}</dd>
+            </div>
+            <div class="calc-row">
+              <dt>{{ t('dashboard.baseCurrency') }}</dt>
+              <dd class="fig">{{ portfolioStore.currentPortfolio?.baseCurrency }}</dd>
+            </div>
+          </dl>
+        </section>
+
+        <!-- Holdings ledger -->
+        <section class="block holdings-section" aria-labelledby="holdings-heading">
+          <div class="block-head">
+            <h2 id="holdings-heading">{{ t('dashboard.currentHoldings') }}</h2>
+          </div>
+          <EmptySheet v-if="holdings.length === 0" compact>{{ t('dashboard.noHoldings') }}</EmptySheet>
+          <div v-else class="ledger-scroll">
+            <table class="holdings-table">
+              <thead>
+                <tr>
+                  <th scope="col">{{ t('dashboard.symbol') }}</th>
+                  <th scope="col" class="num">{{ t('dashboard.shares') }}</th>
+                  <th scope="col" class="num">{{ t('dashboard.avgCost') }}</th>
+                  <th scope="col" class="num">{{ t('dashboard.marketValue') }}</th>
+                  <th scope="col" class="num">{{ t('dashboard.weight') }}</th>
+                  <th scope="col" class="num">{{ t('dashboard.unrealizedPnL') }}</th>
+                  <th scope="col">{{ t('dashboard.updated') }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="holding in holdings" :key="holding.symbol">
+                  <th scope="row" class="symbol">{{ holding.symbol }}</th>
+                  <td class="num">{{ holding.shares.toFixed(2) }}</td>
+                  <td class="num">${{ holding.avgCost.toFixed(2) }}</td>
+                  <td class="num">${{ formatCurrency(holding.marketValue) }}</td>
+                  <td class="num">
+                    <span class="weight">
+                      <span class="weight-bar" :style="{ width: `${weightOf(holding.marketValue)}%` }"></span>
+                      {{ weightOf(holding.marketValue).toFixed(1) }}%
+                    </span>
+                  </td>
+                  <td class="num" :class="{ positive: holding.unrealizedPnL >= 0, negative: holding.unrealizedPnL < 0 }">
+                    {{ holding.unrealizedPnL >= 0 ? '+' : '-' }}${{ formatCurrency(Math.abs(holding.unrealizedPnL)) }}
+                  </td>
+                  <td class="updated">{{ formatDate(holding.lastUpdated) }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </section>
       </div>
+
+      <!-- Recent transactions -->
+      <section class="block transactions-preview" aria-labelledby="recent-heading">
+        <div class="block-head">
+          <h2 id="recent-heading">{{ t('dashboard.recentTransactions') }}</h2>
+          <router-link to="/transactions" class="link-view-all">{{ t('dashboard.viewAll') }}</router-link>
+        </div>
+        <EmptySheet v-if="transactionStore.sortedTransactions.length === 0" compact>
+          {{ t('dashboard.noTransactions') }}
+        </EmptySheet>
+        <ol v-else class="tx-lines">
+          <li v-for="tx in recentTransactions" :key="tx.id" class="tx-line">
+            <span class="tx-type" :class="`tx-${tx.type.toLowerCase()}`">{{ t(`transactions.${tx.type.toLowerCase()}`) }}</span>
+            <span class="tx-symbol">{{ tx.symbol ?? '—' }}</span>
+            <span class="tx-qty fig">{{ tx.qty ? `${tx.qty} ${t('dashboard.sharesUnit')}` : '' }}</span>
+            <span class="tx-price fig">{{ tx.price ? `$${tx.price.toFixed(2)}` : '' }}</span>
+            <span class="tx-date fig">{{ formatDate(tx.timestamp) }}</span>
+          </li>
+        </ol>
+      </section>
     </div>
   </div>
 </template>
@@ -172,7 +157,8 @@ import { useAuthStore } from '@/stores/authStore'
 import { usePortfolioStore } from '@/stores/portfolioStore'
 import { useTransactionStore } from '@/stores/transactionStore'
 import { useAnalyticsStore } from '@/stores/analyticsStore'
-import Card from '@/components/common/Card.vue'
+import TitleBlock from '@/components/pad/TitleBlock.vue'
+import EmptySheet from '@/components/pad/EmptySheet.vue'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 
 const router = useRouter()
@@ -254,6 +240,12 @@ function formatDate(dateStr: string): string {
   })
 }
 
+// 보유 비중 (%): 시장가치 / 총 가치
+function weightOf(marketValue: number): number {
+  const total = portfolioMetrics.value?.totalValue ?? 0
+  return total > 0 ? (marketValue / total) * 100 : 0
+}
+
 function formatCurrency(value: number): string {
   return value.toLocaleString('en-US', {
     minimumFractionDigits: 2,
@@ -268,277 +260,171 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.dashboard-page {
-  min-height: 100vh;
-  background-color: var(--color-gray-50);
-  padding: var(--space-6);
+.dash-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 4fr) minmax(0, 8fr);
+  gap: var(--space-12);
+  align-items: start;
 }
 
-.dashboard-container {
-  max-width: 1400px;
-  margin: 0 auto;
-}
-
-.dashboard-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: var(--space-6);
-  flex-wrap: wrap;
-  gap: var(--space-4);
-}
-
-.dashboard-header h1 {
-  margin: 0;
-  font-size: var(--font-size-3xl);
-  color: var(--color-text);
-}
-
-.portfolio-name {
-  margin: var(--space-2) 0 0;
-  color: var(--color-text-muted);
-  font-size: var(--font-size-base);
+.dash-grid .block + .block {
+  margin-top: 0;
 }
 
 .portfolio-selector {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
+  min-width: 14rem;
 }
 
-.portfolio-selector label {
-  font-weight: var(--font-weight-medium);
-  color: var(--color-text-muted);
-}
-
-.portfolio-selector select {
-  padding: var(--space-2) var(--space-3);
-  border: 1px solid var(--color-border);
-  border-radius: var(--border-radius-md);
-  font-size: var(--font-size-base);
-  background-color: var(--color-background);
-  cursor: pointer;
-}
-
-.empty-state {
-  text-align: center;
-  padding: var(--space-16) var(--space-8);
-}
-
-.empty-state p {
-  font-size: var(--font-size-lg);
-  color: var(--color-text-muted);
-  margin-bottom: var(--space-6);
-}
-
-.btn-primary {
-  display: inline-block;
-  padding: var(--space-3) var(--space-6);
-  background-color: var(--color-primary-600);
-  color: white;
-  border: none;
-  border-radius: var(--border-radius-md);
-  font-weight: var(--font-weight-medium);
-  cursor: pointer;
-  text-decoration: none;
-  transition: all var(--transition-base);
-}
-
-.btn-primary:hover {
-  background-color: var(--color-primary-700);
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
-}
-
-.dashboard-content {
+.total {
   display: flex;
   flex-direction: column;
-  gap: var(--space-6);
+  gap: var(--space-2);
+  padding: var(--space-2) 0 var(--space-6);
 }
 
-.summary-section h2,
-.holdings-section h2,
-.transactions-preview h2 {
+.total-value {
+  font-size: clamp(1.75rem, 1.2rem + 1.6vw, 2.5rem);
+  font-weight: 600;
+  line-height: 1.1;
+}
+
+.calc {
   margin: 0;
-  font-size: var(--font-size-xl);
 }
 
-.summary-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: var(--space-6);
-}
-
-.summary-item {
+.calc-row {
   display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--space-4);
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--rule);
 }
 
-.summary-label {
-  font-size: var(--font-size-sm);
-  color: var(--color-text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+.calc-row dt {
+  color: var(--ink-2);
+  font-size: var(--text-sm);
 }
 
-.summary-value {
-  font-size: var(--font-size-2xl);
-  font-weight: var(--font-weight-bold);
-  color: var(--color-text);
-}
-
-.summary-value.positive {
-  color: var(--color-success-600);
-}
-
-.summary-value.negative {
-  color: var(--color-error-600);
-}
-
-.table-container {
-  overflow-x: auto;
-}
-
-.holdings-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.holdings-table th {
-  text-align: left;
-  padding: var(--space-3);
-  border-bottom: 2px solid var(--color-border);
-  font-weight: var(--font-weight-medium);
-  color: var(--color-text-muted);
-  font-size: var(--font-size-sm);
-  text-transform: uppercase;
-}
-
-.holdings-table td {
-  padding: var(--space-3);
-  border-bottom: 1px solid var(--color-border);
-}
-
-.holdings-table tbody tr:hover {
-  background-color: var(--color-gray-50);
+.calc-row dd {
+  margin: 0;
+  font-size: var(--text-lg);
 }
 
 .holdings-table .symbol {
-  font-weight: var(--font-weight-medium);
-  color: var(--color-primary-600);
+  font-family: var(--font-label);
+  font-size: var(--text-lg);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: none;
+  color: var(--ink);
+  border-bottom: 1px solid var(--rule);
 }
 
-.holdings-table td.positive {
-  color: var(--color-success-600);
+.weight {
+  position: relative;
+  display: inline-block;
+  min-width: 5.5rem;
+  padding-bottom: 6px;
 }
 
-.holdings-table td.negative {
-  color: var(--color-error-600);
+.weight-bar {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  height: 3px;
+  background-color: var(--ink);
+  max-width: 100%;
 }
 
-.section-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+.updated {
+  color: var(--ink-2);
+  font-size: var(--text-sm);
+  white-space: nowrap;
+}
+
+.transactions-preview {
+  margin-top: var(--space-16);
 }
 
 .link-view-all {
-  font-size: var(--font-size-sm);
-  color: var(--color-primary-600);
-  text-decoration: none;
-  font-weight: var(--font-weight-medium);
-}
-
-.link-view-all:hover {
-  text-decoration: underline;
-}
-
-.transactions-list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-}
-
-.transaction-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: var(--space-3);
-  border-radius: var(--border-radius-md);
-  background-color: var(--color-gray-50);
-}
-
-.tx-info {
-  display: flex;
-  gap: var(--space-3);
-  align-items: center;
-}
-
-.tx-type {
-  font-weight: var(--font-weight-bold);
-  padding: var(--space-1) var(--space-2);
-  border-radius: var(--border-radius-sm);
-  font-size: var(--font-size-xs);
+  font-family: var(--font-label);
+  font-weight: 600;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
 }
 
-.tx-buy .tx-type {
-  background-color: var(--color-success-100);
-  color: var(--color-success-700);
+.tx-lines {
+  list-style: none;
 }
 
-.tx-sell .tx-type {
-  background-color: var(--color-error-100);
-  color: var(--color-error-700);
+.tx-line {
+  display: grid;
+  grid-template-columns: 7rem 5rem minmax(0, 1fr) 7rem 13rem;
+  gap: var(--space-4);
+  align-items: baseline;
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--rule);
 }
 
-.tx-deposit .tx-type,
-.tx-withdraw .tx-type {
-  background-color: var(--color-info-100);
-  color: var(--color-info-700);
+.tx-type {
+  font-family: var(--font-label);
+  font-weight: 700;
+  font-size: var(--text-sm);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+.tx-sell {
+  color: var(--red-pencil);
+}
+
+.tx-deposit,
+.tx-withdraw {
+  color: var(--blue-pencil);
 }
 
 .tx-symbol {
-  font-weight: var(--font-weight-medium);
-  color: var(--color-text);
+  font-weight: 600;
 }
 
 .tx-qty,
 .tx-price {
-  color: var(--color-text-muted);
-  font-size: var(--font-size-sm);
+  color: var(--ink-2);
+  text-align: right;
 }
 
 .tx-date {
-  font-size: var(--font-size-sm);
-  color: var(--color-text-muted);
+  color: var(--ink-2);
+  font-size: var(--text-sm);
+  text-align: right;
 }
 
-.empty-message {
-  text-align: center;
-  padding: var(--space-8);
-  color: var(--color-text-muted);
+@media (max-width: 1080px) {
+  .dash-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-12);
+  }
 }
 
-@media (max-width: 768px) {
-  .dashboard-page {
-    padding: var(--space-4);
+@media (max-width: 720px) {
+  .portfolio-selector {
+    min-width: 0;
+    width: 100%;
   }
 
-  .dashboard-header {
-    flex-direction: column;
-    align-items: flex-start;
+  .tx-line {
+    grid-template-columns: auto auto minmax(0, 1fr);
+    grid-template-areas:
+      'type symbol price'
+      'qty qty date';
+    row-gap: var(--space-1);
   }
 
-  .summary-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .transaction-item {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: var(--space-2);
-  }
+  .tx-type { grid-area: type; }
+  .tx-symbol { grid-area: symbol; }
+  .tx-price { grid-area: price; }
+  .tx-qty { grid-area: qty; text-align: left; }
+  .tx-date { grid-area: date; }
 }
 </style>

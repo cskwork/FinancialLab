@@ -1,105 +1,153 @@
 <template>
-  <div class="backtest-page">
-    <header class="page-header">
-      <h1>Backtest Lab</h1>
-      <p class="subtitle">Compare dollar-cost averaging against lump-sum investing using local OHLCV data.</p>
-    </header>
+  <div class="page backtest-page">
+    <TitleBlock title="Backtest Lab" sheet="04 / 04">
+      Compare dollar-cost averaging against lump-sum investing using local OHLCV data.
+    </TitleBlock>
 
-    <section class="form-section">
-      <form class="form-grid" @submit.prevent="runBacktest">
-        <label>
-          Symbol
-          <select v-model="form.symbol" @change="handleSymbolChange" required>
-            <option v-for="symbol in symbols" :key="symbol" :value="symbol">{{ symbol }}</option>
-          </select>
-        </label>
-        <label>
-          Start Date
-          <input v-model="form.startDate" type="date" required />
-        </label>
-        <label>
-          End Date
-          <input v-model="form.endDate" type="date" required />
-        </label>
-        <label>
-          Initial Capital (USD)
-          <input v-model.number="form.initialCapital" type="number" min="100" step="100" required />
-        </label>
-        <label>
-          DCA Amount (USD)
-          <input v-model.number="form.dcaAmount" type="number" min="1" step="50" required />
-        </label>
-        <label>
-          Interval
-          <select v-model="form.dcaInterval" required>
-            <option value="WEEKLY">Weekly</option>
-            <option value="MONTHLY">Monthly</option>
-          </select>
-        </label>
-        <div class="form-actions">
-          <button class="btn-primary" type="submit" :disabled="isRunning || !canRun">
-            {{ isRunning ? 'Running...' : 'Run Backtest' }}
-          </button>
+    <div class="lab-grid">
+      <section class="block given" aria-labelledby="given-heading">
+        <div class="block-head">
+          <h2 id="given-heading">Given</h2>
         </div>
-      </form>
-    </section>
-
-    <section v-if="result" class="results-section">
-      <div class="result-card">
-        <h2>Results</h2>
-        <div class="results-grid">
-          <div class="result-group">
-            <h3>DCA Strategy</h3>
-            <dl>
-              <div>
-                <dt>Total Invested</dt>
-                <dd>${{ formatCurrency(result.dcaStrategy.totalInvested) }}</dd>
-              </div>
-              <div>
-                <dt>Final Value</dt>
-                <dd>${{ formatCurrency(result.dcaStrategy.finalValue) }}</dd>
-              </div>
-              <div>
-                <dt>Return %</dt>
-                <dd>{{ result.dcaStrategy.returnPercentage.toFixed(2) }}%</dd>
-              </div>
-            </dl>
+        <form class="form-grid" novalidate @submit.prevent="runBacktest">
+          <div class="field">
+            <label for="bt-symbol">Symbol</label>
+            <select id="bt-symbol" v-model="form.symbol" required @change="handleSymbolChange">
+              <option v-if="symbols.length === 0" value="" disabled>Loading sample data…</option>
+              <option v-for="symbol in symbols" :key="symbol" :value="symbol">{{ symbol }}</option>
+            </select>
           </div>
-          <div class="result-group">
-            <h3>Lump Sum</h3>
-            <dl>
-              <div>
-                <dt>Total Invested</dt>
-                <dd>${{ formatCurrency(result.lumpSumStrategy.totalInvested) }}</dd>
-              </div>
-              <div>
-                <dt>Final Value</dt>
-                <dd>${{ formatCurrency(result.lumpSumStrategy.finalValue) }}</dd>
-              </div>
-              <div>
-                <dt>Return %</dt>
-                <dd>{{ result.lumpSumStrategy.returnPercentage.toFixed(2) }}%</dd>
-              </div>
-            </dl>
+          <div class="field">
+            <label for="bt-interval">Interval</label>
+            <select id="bt-interval" v-model="form.dcaInterval" required>
+              <option value="WEEKLY">Weekly</option>
+              <option value="MONTHLY">Monthly</option>
+            </select>
           </div>
-        </div>
-        <div class="comparison">
-          <p>
-            <strong>{{ result.comparison.lumpSumWins ? 'Lump Sum outperformed.' : 'DCA outperformed.' }}</strong>
-            Difference: ${{ formatCurrency(Math.abs(result.comparison.dcaDifference)) }}
+          <div class="field">
+            <label for="bt-start">Start Date</label>
+            <input id="bt-start" v-model="form.startDate" type="date" required :aria-invalid="dateError" />
+          </div>
+          <div class="field">
+            <label for="bt-end">End Date</label>
+            <input
+              id="bt-end"
+              v-model="form.endDate"
+              type="date"
+              required
+              :aria-invalid="dateError"
+              :aria-describedby="dateError ? 'bt-date-error' : undefined"
+            />
+          </div>
+          <div class="field">
+            <label for="bt-capital">Initial Capital (USD)</label>
+            <input id="bt-capital" v-model.number="form.initialCapital" type="number" min="100" step="100" required />
+          </div>
+          <div class="field">
+            <label for="bt-dca">DCA Amount (USD)</label>
+            <input id="bt-dca" v-model.number="form.dcaAmount" type="number" min="1" step="50" required />
+          </div>
+          <p v-if="dateError" id="bt-date-error" class="form-error" role="alert">
+            Start date must be before end date.
           </p>
-        </div>
-      </div>
-    </section>
+          <div class="form-actions">
+            <button class="btn btn--primary run-btn" type="submit" :disabled="isRunning || !canRun">
+              <Play v-if="!isRunning" aria-hidden="true" />
+              <span v-else class="run-spinner spinner" aria-hidden="true"></span>
+              {{ isRunning ? 'Running...' : 'Run Backtest' }}
+            </button>
+            <span v-if="dataRange" class="range-note fig">Data: {{ dataRange }}</span>
+          </div>
+        </form>
+      </section>
 
-    <p v-if="!result && !isRunning" class="hint">Run the simulation to see which approach wins for your chosen symbol and period.</p>
+      <section class="block results" aria-labelledby="results-heading" aria-live="polite">
+        <div class="block-head">
+          <h2 id="results-heading">Results</h2>
+          <p v-if="result">{{ form.symbol }} · {{ form.startDate }} → {{ form.endDate }}</p>
+        </div>
+
+        <template v-if="result">
+          <div class="verdict" :key="runId">
+            <p class="verdict-line">
+              <strong>{{ result.comparison.lumpSumWins ? 'Lump Sum outperformed.' : 'DCA outperformed.' }}</strong>
+              <span class="verdict-diff">
+                Difference: <span class="fig">${{ formatCurrency(Math.abs(result.comparison.dcaDifference)) }}</span>
+              </span>
+            </p>
+          </div>
+
+          <div class="results-grid">
+            <div class="result-group" :class="{ winner: !result.comparison.lumpSumWins }">
+              <h3><i class="key key-dca" aria-hidden="true"></i>DCA Strategy<Check v-if="!result.comparison.lumpSumWins" class="win-mark" aria-hidden="true" /></h3>
+              <dl>
+                <div>
+                  <dt>Total Invested</dt>
+                  <dd class="fig">${{ formatCurrency(result.dcaStrategy.totalInvested) }}</dd>
+                </div>
+                <div>
+                  <dt>Final Value</dt>
+                  <dd class="fig">${{ formatCurrency(result.dcaStrategy.finalValue) }}</dd>
+                </div>
+                <div>
+                  <dt>Return %</dt>
+                  <dd class="fig" :class="{ negative: result.dcaStrategy.returnPercentage < 0 }">
+                    {{ result.dcaStrategy.returnPercentage.toFixed(2) }}%
+                  </dd>
+                </div>
+              </dl>
+            </div>
+            <div class="result-group" :class="{ winner: result.comparison.lumpSumWins }">
+              <h3><i class="key key-lump" aria-hidden="true"></i>Lump Sum<Check v-if="result.comparison.lumpSumWins" class="win-mark" aria-hidden="true" /></h3>
+              <dl>
+                <div>
+                  <dt>Total Invested</dt>
+                  <dd class="fig">${{ formatCurrency(result.lumpSumStrategy.totalInvested) }}</dd>
+                </div>
+                <div>
+                  <dt>Final Value</dt>
+                  <dd class="fig">${{ formatCurrency(result.lumpSumStrategy.finalValue) }}</dd>
+                </div>
+                <div>
+                  <dt>Return %</dt>
+                  <dd class="fig" :class="{ negative: result.lumpSumStrategy.returnPercentage < 0 }">
+                    {{ result.lumpSumStrategy.returnPercentage.toFixed(2) }}%
+                  </dd>
+                </div>
+              </dl>
+            </div>
+          </div>
+
+          <EquityChart
+            v-if="curve.length > 1"
+            :key="`chart-${runId}`"
+            class="curve"
+            :points="curve"
+            :labels="{ dca: 'DCA', lump: 'Lump Sum', invested: 'DCA invested' }"
+            caption="Portfolio value at each daily close. Trades fill at that day's close, as in the simulation."
+          />
+        </template>
+
+        <LoadingSpinner v-else-if="isRunning" message="Running..." />
+
+        <EmptySheet v-else>
+          Run the simulation to see which approach wins for your chosen symbol and period.
+        </EmptySheet>
+      </section>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { reactive, ref, onMounted, computed } from 'vue'
 import { db } from '@/services/db/schema'
+import { Play, Check } from 'lucide-vue-next'
 import { useToast } from '@/composables/useToast'
+import TitleBlock from '@/components/pad/TitleBlock.vue'
+import EmptySheet from '@/components/pad/EmptySheet.vue'
+import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
+import EquityChart from '@/components/charts/EquityChart.vue'
+import { buildEquityCurves, type EquityPoint } from '@/utils/equityCurve'
 
 interface BacktestForm {
   symbol: string
@@ -110,17 +158,16 @@ interface BacktestForm {
   dcaInterval: 'WEEKLY' | 'MONTHLY'
 }
 
+interface StrategySummary {
+  totalInvested: number
+  finalValue: number
+  returnPercentage: number
+  trades?: { date: string; shares: number; cost: number }[]
+}
+
 interface BacktestResult {
-  dcaStrategy: {
-    totalInvested: number
-    finalValue: number
-    returnPercentage: number
-  }
-  lumpSumStrategy: {
-    totalInvested: number
-    finalValue: number
-    returnPercentage: number
-  }
+  dcaStrategy: StrategySummary
+  lumpSumStrategy: StrategySummary
   comparison: {
     dcaFinalValue: number
     lumpSumFinalValue: number
@@ -133,6 +180,9 @@ const toast = useToast()
 const symbols = ref<string[]>([])
 const isRunning = ref(false)
 const result = ref<BacktestResult | null>(null)
+const curve = ref<EquityPoint[]>([])
+const runId = ref(0)
+const dataRange = ref('')
 const form = reactive<BacktestForm>({
   symbol: '',
   startDate: '',
@@ -150,6 +200,11 @@ const canRun = computed(() => {
     new Date(form.startDate) < new Date(form.endDate)
   )
 })
+
+// 시작일이 종료일보다 늦은 경우 인라인으로 알린다
+const dateError = computed(
+  () => form.startDate !== '' && form.endDate !== '' && new Date(form.startDate) >= new Date(form.endDate)
+)
 
 async function loadSymbols() {
   const uniqueSymbols = new Set<string>()
@@ -171,11 +226,13 @@ async function updateDateRange() {
 
   form.startDate = candles[0]!.date
   form.endDate = candles[candles.length - 1]!.date
+  dataRange.value = `${form.startDate} → ${form.endDate}`
 }
 
 function handleSymbolChange() {
   updateDateRange()
   result.value = null
+  curve.value = []
 }
 
 function formatCurrency(value: number): string {
@@ -194,6 +251,7 @@ async function runBacktest() {
   try {
     isRunning.value = true
     result.value = null
+    curve.value = []
 
     const candles = await db.candles
       .where('symbol')
@@ -246,6 +304,13 @@ async function runBacktest() {
       })
     })
 
+    curve.value = buildEquityCurves(
+      candles.map((candle) => ({ date: candle.date, close: candle.close })),
+      result.value.dcaStrategy.trades ?? [],
+      result.value.lumpSumStrategy.trades ?? []
+    )
+    runId.value += 1
+
     toast.success('백테스트가 완료되었습니다.')
   } catch (error) {
     console.error(error)
@@ -261,140 +326,186 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.backtest-page {
-  min-height: 100vh;
-  padding: var(--space-6);
-  background: linear-gradient(180deg, rgba(37, 99, 235, 0.05) 0%, rgba(255, 255, 255, 1) 60%);
+.lab-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 4fr) minmax(0, 8fr);
+  gap: var(--space-12);
+  align-items: start;
 }
 
-.page-header {
-  max-width: 960px;
-  margin: 0 auto var(--space-6);
-}
-
-.page-header h1 {
-  margin: 0;
-  font-size: var(--font-size-3xl);
-}
-
-.subtitle {
-  margin: var(--space-2) 0 0;
-  color: var(--color-text-muted);
-  max-width: 640px;
-}
-
-.form-section {
-  max-width: 960px;
-  margin: 0 auto var(--space-6);
-  background-color: var(--color-background);
-  padding: var(--space-6);
-  border-radius: var(--border-radius-2xl);
-  box-shadow: var(--shadow-md);
+.lab-grid .block + .block {
+  margin-top: 0;
 }
 
 .form-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: var(--space-4);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-5) var(--space-4);
 }
 
-.form-grid label {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-  font-size: var(--font-size-sm);
-}
-
-.form-grid input,
-.form-grid select {
-  padding: var(--space-2) var(--space-3);
-  border: 1px solid var(--color-border);
-  border-radius: var(--border-radius-md);
-  font-size: var(--font-size-sm);
+.form-error {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: var(--red-pencil);
+  font-size: var(--text-sm);
 }
 
 .form-actions {
   grid-column: 1 / -1;
   display: flex;
-  justify-content: flex-end;
-}
-
-.btn-primary {
-  padding: var(--space-3) var(--space-6);
-  background-color: var(--color-primary-600);
-  color: #fff;
-  border: none;
-  border-radius: var(--border-radius-md);
-  font-weight: var(--font-weight-medium);
-  cursor: pointer;
-  transition: all var(--transition-base);
-}
-
-.btn-primary:disabled {
-  background-color: var(--color-gray-400);
-  cursor: not-allowed;
-}
-
-.btn-primary:not(:disabled):hover {
-  background-color: var(--color-primary-700);
-}
-
-.results-section {
-  max-width: 960px;
-  margin: 0 auto;
-}
-
-.result-card {
-  background-color: var(--color-background);
-  border-radius: var(--border-radius-2xl);
-  box-shadow: var(--shadow-md);
-  padding: var(--space-6);
-  display: flex;
   flex-direction: column;
-  gap: var(--space-4);
+  align-items: stretch;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.run-btn {
+  min-height: 52px;
+  font-size: var(--text-lg);
+}
+
+.run-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+}
+
+.range-note {
+  font-size: var(--text-xs);
+  color: var(--ink-2);
+}
+
+/* the answer, boxed by hand once the run lands: the box is drawn left to right */
+.verdict {
+  position: relative;
+  display: inline-block;
+  max-width: 100%;
+  margin: var(--space-2) 0 var(--space-6);
+  padding: var(--space-3) var(--space-5);
+  background: linear-gradient(transparent 55%, var(--highlight) 55%, var(--highlight) 92%, transparent 92%);
+}
+
+.verdict::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: 2px solid var(--ink);
+  pointer-events: none;
+  animation: box-draw 700ms var(--ease-out) 700ms both;
+}
+
+@keyframes box-draw {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  .verdict {
+    background: var(--highlight);
+  }
+
+  .verdict::after {
+    border-color: var(--highlight);
+  }
+}
+
+.verdict-line {
+  position: relative;
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2) var(--space-4);
+  color: var(--highlight-ink);
+}
+
+.verdict-line strong {
+  font-family: var(--font-label);
+  font-size: var(--text-2xl);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.verdict-diff {
+  font-size: var(--text-base);
 }
 
 .results-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: var(--space-4);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-8);
+  margin-bottom: var(--space-8);
 }
 
 .result-group h3 {
-  margin: 0 0 var(--space-3);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding-bottom: var(--space-2);
+  border-bottom: 1.5px solid var(--rule-strong);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.win-mark {
+  margin-left: auto;
+  width: 20px;
+  height: 20px;
 }
 
 .result-group dl {
-  display: grid;
-  gap: var(--space-2);
+  margin: 0;
+}
+
+.result-group dl div {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--rule);
 }
 
 .result-group dt {
-  font-size: var(--font-size-xs);
-  text-transform: uppercase;
-  color: var(--color-text-muted);
+  color: var(--ink-2);
+  font-size: var(--text-sm);
 }
 
 .result-group dd {
   margin: 0;
-  font-size: var(--font-size-lg);
-  font-weight: var(--font-weight-semibold);
+  font-size: var(--text-lg);
 }
 
-.comparison {
-  padding-top: var(--space-3);
-  border-top: 1px solid var(--color-border);
+.key {
+  display: inline-block;
+  width: 18px;
+  border-top: 2.5px solid var(--series-1);
 }
 
-.hint {
-  text-align: center;
-  margin-top: var(--space-6);
-  color: var(--color-text-muted);
+.key-lump {
+  border-top-color: var(--series-2);
 }
 
-@media (max-width: 768px) {
-  .form-actions {
-    justify-content: center;
+@media (max-width: 1080px) {
+  .lab-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 560px) {
+  .form-grid,
+  .results-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .results-grid {
+    gap: var(--space-6);
   }
 }
 </style>
