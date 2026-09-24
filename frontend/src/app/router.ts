@@ -90,7 +90,11 @@ const routes: RouteRecordRaw[] = [
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes,
-  scrollBehavior(to, _from, savedPosition) {
+  scrollBehavior(to, from, savedPosition) {
+    // 같은 화면에서 쿼리만 바뀌면(예: 거래 필터) 스크롤 위치를 유지
+    if (to.path === from.path && to.hash === from.hash) {
+      return false
+    }
     if (savedPosition) {
       return savedPosition
     } else if (to.hash) {
@@ -102,27 +106,27 @@ const router = createRouter({
 })
 
 // Navigation guards
-router.beforeEach((to, _from, next) => {
+router.beforeEach(async (to) => {
   // 페이지 타이틀 업데이트
   if (to.meta.title) {
     document.title = to.meta.title as string
   }
 
   // 인증 체크
-  const requiresAuth = to.meta.requiresAuth
-  if (requiresAuth) {
+  if (to.meta.requiresAuth) {
     // authStore를 동적으로 import하여 순환 의존성 방지
-    import('@/stores/authStore').then(({ useAuthStore }) => {
-      const authStore = useAuthStore()
-      if (!authStore.isAuthenticated) {
-        next({ name: 'login', query: { redirect: to.fullPath } })
-      } else {
-        next()
-      }
-    })
-  } else {
-    next()
+    const { useAuthStore } = await import('@/stores/authStore')
+    const authStore = useAuthStore()
+    if (!authStore.isAuthenticated) {
+      return { name: 'login', query: { redirect: to.fullPath } }
+    }
+
+    // 데모 데이터(캔들, 샘플 거래)가 준비된 뒤 화면을 연다
+    const { whenSeedReady } = await import('@/utils/seedLoader')
+    await whenSeedReady()
   }
+
+  return true
 })
 
 export default router

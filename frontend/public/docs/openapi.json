@@ -1,0 +1,690 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "FinLab Mock API",
+    "version": "1.0.0",
+    "description": "Client-side mock API contract for the FinLab portfolio simulator."
+  },
+  "servers": [
+    {
+      "url": "https://finlab-api.fly.dev",
+      "description": "Live Spring Boot API (optional)"
+    }
+  ],
+  "paths": {
+    "/v1/auth/login": {
+      "post": {
+        "summary": "Login with email",
+        "operationId": "login",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              },
+              "example": {
+                "email": "demo@finlab.app"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful login",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoginResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error"
+          }
+        }
+      }
+    },
+    "/v1/portfolios": {
+      "get": {
+        "summary": "List portfolios for the current user",
+        "operationId": "listPortfolios",
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Portfolio collection",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Portfolio"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Create portfolio",
+        "operationId": "createPortfolio",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePortfolioRequest"
+              },
+              "example": {
+                "name": "My Portfolio",
+                "baseCurrency": "USD"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created portfolio",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Portfolio"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/portfolios/{id}/transactions": {
+      "get": {
+        "summary": "List portfolio transactions",
+        "operationId": "listTransactions",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Transaction collection",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Transaction"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Create transaction",
+        "operationId": "createTransaction",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTransactionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created transaction",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Transaction"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/portfolios/{id}/holdings": {
+      "get": {
+        "summary": "List computed holdings",
+        "operationId": "getHoldings",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Holding collection",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Holding"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/metrics/portfolio/{id}": {
+      "get": {
+        "summary": "Portfolio risk metrics",
+        "operationId": "getPortfolioMetrics",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Metric snapshot",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MetricSnapshot"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/portfolios/{id}/goals": {
+      "get": {
+        "summary": "List financial goals",
+        "operationId": "listGoals",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Goal collection",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Goal"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Create financial goal",
+        "operationId": "createGoal",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateGoalRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created goal",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Goal"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/portfolios/{id}/plans": {
+      "get": {
+        "summary": "List recurring investment plans",
+        "operationId": "listPlans",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Plan collection",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Plan"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Create recurring plan",
+        "operationId": "createPlan",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePlanRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created plan",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Plan"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "LoginRequest": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email"
+          }
+        },
+        "required": ["email"]
+      },
+      "LoginResponse": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "integer"
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "role": {
+            "type": "string",
+            "enum": ["USER", "ADMIN"]
+          },
+          "token": {
+            "type": "string"
+          }
+        },
+        "required": ["userId", "email", "role", "token"]
+      },
+      "Portfolio": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "userId": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "baseCurrency": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": ["id", "userId", "name", "baseCurrency", "createdAt", "updatedAt"]
+      },
+      "CreatePortfolioRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "baseCurrency": {
+            "type": "string",
+            "pattern": "^[A-Z]{3}$"
+          }
+        },
+        "required": ["name", "baseCurrency"]
+      },
+      "Transaction": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "portfolioId": {
+            "type": "integer"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["BUY", "SELL", "DEPOSIT", "WITHDRAW"]
+          },
+          "symbol": {
+            "type": "string",
+            "nullable": true
+          },
+          "qty": {
+            "type": "number",
+            "nullable": true
+          },
+          "price": {
+            "type": "number",
+            "nullable": true
+          },
+          "fee": {
+            "type": "number"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "note": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": ["id", "portfolioId", "type", "fee", "timestamp"]
+      },
+      "CreateTransactionRequest": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": ["BUY", "SELL", "DEPOSIT", "WITHDRAW"]
+          },
+          "symbol": {
+            "type": "string",
+            "nullable": true
+          },
+          "qty": {
+            "type": "number",
+            "nullable": true
+          },
+          "price": {
+            "type": "number",
+            "nullable": true
+          },
+          "fee": {
+            "type": "number"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "note": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": ["type", "timestamp"]
+      },
+      "Holding": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "portfolioId": {
+            "type": "integer"
+          },
+          "symbol": {
+            "type": "string"
+          },
+          "shares": {
+            "type": "number"
+          },
+          "avgCost": {
+            "type": "number"
+          },
+          "marketValue": {
+            "type": "number"
+          },
+          "unrealizedPnL": {
+            "type": "number"
+          },
+          "lastUpdated": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": ["id", "portfolioId", "symbol", "shares", "avgCost", "marketValue", "unrealizedPnL", "lastUpdated"]
+      },
+      "MetricSnapshot": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "portfolioId": {
+            "type": "integer"
+          },
+          "asOf": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "totalValue": {
+            "type": "number"
+          },
+          "cash": {
+            "type": "number"
+          },
+          "pnlDaily": {
+            "type": "number"
+          },
+          "pnlYTD": {
+            "type": "number"
+          },
+          "volatility": {
+            "type": "number"
+          },
+          "sharpe": {
+            "type": "number"
+          },
+          "maxDrawdown": {
+            "type": "number"
+          }
+        },
+        "required": ["id", "portfolioId", "asOf", "totalValue", "cash", "pnlDaily", "pnlYTD", "volatility", "sharpe", "maxDrawdown"]
+      },
+      "Goal": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "portfolioId": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "targetAmount": {
+            "type": "number"
+          },
+          "targetDate": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "currentAmount": {
+            "type": "number"
+          }
+        },
+        "required": ["id", "portfolioId", "name", "targetAmount", "targetDate", "currentAmount"]
+      },
+      "CreateGoalRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "targetAmount": {
+            "type": "number"
+          },
+          "targetDate": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "currentAmount": {
+            "type": "number"
+          }
+        },
+        "required": ["name", "targetAmount", "targetDate"]
+      },
+      "Plan": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "portfolioId": {
+            "type": "integer"
+          },
+          "symbol": {
+            "type": "string"
+          },
+          "amountPerInterval": {
+            "type": "number"
+          },
+          "interval": {
+            "type": "string",
+            "enum": ["WEEKLY", "MONTHLY"]
+          },
+          "startDate": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "endDate": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "isActive": {
+            "type": "boolean"
+          }
+        },
+        "required": ["id", "portfolioId", "symbol", "amountPerInterval", "interval", "startDate", "isActive"]
+      },
+      "CreatePlanRequest": {
+        "type": "object",
+        "properties": {
+          "symbol": {
+            "type": "string"
+          },
+          "amountPerInterval": {
+            "type": "number"
+          },
+          "interval": {
+            "type": "string",
+            "enum": ["WEEKLY", "MONTHLY"]
+          },
+          "startDate": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "endDate": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "isActive": {
+            "type": "boolean"
+          }
+        },
+        "required": ["symbol", "amountPerInterval", "interval", "startDate"]
+      }
+    }
+  }
+}

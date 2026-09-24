@@ -79,116 +79,141 @@ async function loadTransactionSeeds(jsonPath: string): Promise<TransactionSeed[]
   return data.transactions
 }
 
+/** 데모 로그인 기본 이메일 (LoginPage 기본값 및 schema.populate와 동일) */
+export const DEMO_EMAIL = 'demo@finlab.app'
+
+/** 데모 거래 시드를 한 번만 적용했는지 기록하는 localStorage 키 */
+export const DEMO_SEED_FLAG = 'finlab_demo_seed_v1'
+
 /**
- * 데모 사용자 및 포트폴리오 생성
+ * 데모 사용자 및 포트폴리오 조회/생성
+ * schema.populate()가 만든 demo@finlab.app 사용자와 첫 포트폴리오를 재사용한다.
  */
-async function createDemoUserAndPortfolio(): Promise<{ userId: number; portfolioId: number }> {
-  // 기존 데모 사용자 확인
-  const existingUser = await userRepository.findByEmail('demo@finlab.dev')
+async function ensureDemoUserAndPortfolio(): Promise<{ userId: number; portfolioId: number }> {
+  const existingUser = await userRepository.findByEmail(DEMO_EMAIL)
+  const userId = existingUser?.id ?? (await userRepository.create(DEMO_EMAIL, 'USER'))
 
-  let userId: number
-  if (existingUser) {
-    userId = existingUser.id!
-  } else {
-    userId = await userRepository.create('demo@finlab.dev', 'USER')
-  }
-
-  // 기존 포트폴리오 확인
   const existingPortfolios = await portfolioRepository.findByUserId(userId)
   const firstPortfolio = existingPortfolios[0]
 
-  let portfolioId: number
-  if (firstPortfolio && firstPortfolio.id !== undefined) {
-    portfolioId = firstPortfolio.id
-  } else {
-    portfolioId = await portfolioRepository.create({
+  const portfolioId =
+    firstPortfolio?.id ??
+    (await portfolioRepository.create({
       userId,
       name: 'Demo Portfolio',
       baseCurrency: 'USD'
-    })
-  }
+    }))
 
   return { userId, portfolioId }
 }
 
+function readSeedFlag(): boolean {
+  try {
+    return typeof localStorage !== 'undefined' && localStorage.getItem(DEMO_SEED_FLAG) === 'done'
+  } catch {
+    return false
+  }
+}
+
+function writeSeedFlag() {
+  try {
+    localStorage.setItem(DEMO_SEED_FLAG, 'done')
+  } catch {
+    // storage unavailable (private mode): seeding simply re-checks next visit
+  }
+}
+
 /**
- * 전체 seed 데이터 로드
+ * OHLCV 캔들이 비어 있으면 로드 (백테스트 랩 심볼 목록의 원천)
+ */
+async function ensureCandles(): Promise<number> {
+  if ((await db.candles.count()) > 0) return 0
+
+  const [aaplCandles, spyCandles] = await Promise.all([
+    loadOHLCVData('AAPL', '/data/ohlcv/AAPL.csv'),
+    loadOHLCVData('SPY', '/data/ohlcv/SPY.csv')
+  ])
+  const allCandles = [...aaplCandles, ...spyCandles]
+  await db.candles.bulkAdd(allCandles)
+  return allCandles.length
+}
+
+/**
+ * 데모 포트폴리오에 샘플 거래/목표/계획을 채운다.
+ * 사용자가 직접 입력한 데이터는 절대 지우지 않는다: 포트폴리오에 거래가 하나라도 있으면 건너뛴다.
+ */
+async function ensureDemoPortfolioData(): Promise<number> {
+  if (readSeedFlag()) return 0
+
+  const { portfolioId } = await ensureDemoUserAndPortfolio()
+  const existingCount = await db.transactions.where('portfolioId').equals(portfolioId).count()
+  if (existingCount > 0) {
+    writeSeedFlag()
+    return 0
+  }
+
+  const transactionSeeds = await loadTransactionSeeds('/data/seeds/sample-transactions.json')
+  const transactions: Omit<Transaction, 'id'>[] = transactionSeeds.map((seed) => ({
+    portfolioId,
+    type: seed.type,
+    symbol: seed.symbol,
+    qty: seed.qty,
+    price: seed.price,
+    fee: seed.fee,
+    timestamp: new Date(seed.timestamp),
+    note: seed.note
+  }))
+
+  await db.transactions.bulkAdd(transactions)
+  await seedGoalsAndPlans(portfolioId)
+  writeSeedFlag()
+  return transactions.length
+}
+
+/**
+ * 전체 seed 데이터 로드 (비파괴적, 여러 번 호출해도 안전)
  */
 export async function loadAllSeedData(): Promise<{
   candlesLoaded: number
   transactionsLoaded: number
 }> {
   try {
-    // 1. 사용자 및 포트폴리오 생성
-    const { portfolioId } = await createDemoUserAndPortfolio()
-
-    // 2. OHLCV 데이터 로드
-    const [aaplCandles, spyCandles] = await Promise.all([
-      loadOHLCVData('AAPL', '/data/ohlcv/AAPL.csv'),
-      loadOHLCVData('SPY', '/data/ohlcv/SPY.csv')
-    ])
-
-    const allCandles = [...aaplCandles, ...spyCandles]
-
-    // 기존 캔들 데이터 삭제 후 재로드
-    await db.candles.clear()
-    await db.candles.bulkAdd(allCandles)
-
-    // 3. 거래 데이터 로드
-    const transactionSeeds = await loadTransactionSeeds('/data/seeds/sample-transactions.json')
-
-    const transactions: Omit<Transaction, 'id'>[] = transactionSeeds.map((seed) => ({
-      portfolioId,
-      type: seed.type,
-      symbol: seed.symbol,
-      qty: seed.qty,
-      price: seed.price,
-      fee: seed.fee,
-      timestamp: new Date(seed.timestamp),
-      note: seed.note
-    }))
-
-    // 기존 거래 데이터 삭제 후 재로드
-    await db.transactions.where('portfolioId').equals(portfolioId).delete()
-    await db.transactions.bulkAdd(transactions)
-
-    // 4. Goal & Plan 샘플 데이터 로드
-    await seedGoalsAndPlans(portfolioId)
-
-    return {
-      candlesLoaded: allCandles.length,
-      transactionsLoaded: transactions.length
-    }
+    const candlesLoaded = await ensureCandles()
+    const transactionsLoaded = await ensureDemoPortfolioData()
+    return { candlesLoaded, transactionsLoaded }
   } catch (error) {
     logger.error('Failed to load seed data', error)
     throw error
   }
 }
 
-/**
- * 데이터베이스가 비어있는지 확인
- */
-export async function isDatabaseEmpty(): Promise<boolean> {
-  const userCount = await db.users.count()
-  const portfolioCount = await db.portfolios.count()
-  const transactionCount = await db.transactions.count()
-  const candleCount = await db.candles.count()
-
-  return userCount === 0 && portfolioCount === 0 && transactionCount === 0 && candleCount === 0
-}
+let seedPromise: Promise<void> | null = null
 
 /**
  * 초기 데이터 로드 (앱 시작 시 자동 실행)
+ * 이전 버전은 schema.populate()가 만든 데모 사용자 때문에 DB를 "비어있지 않음"으로 판단해
+ * 캔들과 샘플 거래를 한 번도 로드하지 못했다. 이제 각 데이터셋을 개별적으로 확인한다.
  */
-export async function initializeSeedData(): Promise<void> {
-  const isEmpty = await isDatabaseEmpty()
+export function initializeSeedData(): Promise<void> {
+  if (!seedPromise) {
+    seedPromise = loadAllSeedData().then((result) => {
+      logger.info(
+        `Seed check complete: ${result.candlesLoaded} candles, ${result.transactionsLoaded} transactions added`
+      )
+    })
+  }
+  return seedPromise
+}
 
-  if (isEmpty) {
-    logger.info('Database is empty. Loading seed data...')
-    const result = await loadAllSeedData()
-    logger.info(`Seed data loaded: ${result.candlesLoaded} candles, ${result.transactionsLoaded} transactions`)
-  } else {
-    logger.info('Database already has data. Skipping seed data load.')
+/**
+ * 시드 로딩 완료까지 대기 (실패해도 앱 진입은 막지 않는다)
+ */
+export async function whenSeedReady(): Promise<void> {
+  if (!seedPromise) return
+  try {
+    await seedPromise
+  } catch {
+    // 오류는 initializeSeedData 호출부에서 이미 로깅됨
   }
 }
 
