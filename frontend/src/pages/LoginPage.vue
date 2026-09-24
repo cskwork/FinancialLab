@@ -1,58 +1,81 @@
 <template>
   <div class="login-page">
-    <div class="login-card">
-      <div class="login-header">
+    <router-link to="/" class="back-link">
+      <ArrowLeft aria-hidden="true" />
+      FinLab
+    </router-link>
+
+    <div class="login-sheet">
+      <header class="login-header">
+        <svg class="login-mark" viewBox="0 0 32 32" aria-hidden="true">
+          <rect x="1" y="1" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2" />
+          <path d="M5 24 L11 17 L16 20 L27 7" fill="none" stroke="currentColor" stroke-width="2.6" />
+          <path d="M5 27 H27" stroke="var(--highlight)" stroke-width="3" />
+        </svg>
         <h1>{{ t('login.title') }}</h1>
         <p class="subtitle">{{ t('login.subtitle') }}</p>
-      </div>
+      </header>
 
-      <form @submit.prevent="handleLogin" class="login-form">
-        <div class="form-group">
+      <form class="login-form" @submit.prevent="handleLogin">
+        <div class="field">
           <label for="email">{{ t('login.email') }}</label>
           <input
             id="email"
             v-model="email"
             type="email"
+            autocomplete="email"
             :placeholder="t('login.emailPlaceholder')"
             required
             :disabled="authStore.isLoading"
+            :aria-invalid="Boolean(authStore.error)"
+            :aria-describedby="authStore.error ? 'login-error' : 'login-hint'"
           />
         </div>
 
-        <button type="submit" class="btn-login" :disabled="authStore.isLoading">
+        <button type="submit" class="btn btn--primary login-submit" :disabled="authStore.isLoading">
+          <LogIn aria-hidden="true" />
           {{ authStore.isLoading ? t('login.loggingIn') : t('login.loginButton') }}
         </button>
 
-        <p v-if="authStore.error" class="error-message">
+        <p v-if="authStore.error" id="login-error" class="error-message" role="alert">
           {{ authStore.error }}
         </p>
 
-        <p class="hint">
+        <p id="login-hint" class="hint">
           {{ t('login.hint') }}
         </p>
       </form>
 
-      <div class="demo-info">
-        <p>
-          {{ t('login.mockAuthInfo') }}
-        </p>
-      </div>
+      <p class="demo-info">
+        {{ t('login.mockAuthInfo') }}
+      </p>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
+import { ArrowLeft, LogIn } from 'lucide-vue-next'
 import { useAuthStore } from '@/stores/authStore'
 
 const router = useRouter()
+const route = useRoute()
 const { t } = useI18n()
 const authStore = useAuthStore()
 
 // 이메일 입력
 const email = ref('demo@finlab.app')
+
+// 로그인 전 요청했던 앱 내부 경로로 복귀 (외부 URL은 무시)
+function redirectTarget(): string {
+  const redirect = route.query.redirect
+  if (typeof redirect === 'string' && redirect.startsWith('/') && !redirect.startsWith('//')) {
+    return redirect
+  }
+  return '/dashboard'
+}
 
 // 로그인 처리
 async function handleLogin() {
@@ -61,15 +84,14 @@ async function handleLogin() {
   const success = await authStore.login(email.value)
 
   if (success) {
-    // 로그인 성공 시 대시보드로 이동
-    router.push('/dashboard')
+    router.push(redirectTarget())
   }
 }
 
 // 이미 로그인되어 있으면 대시보드로 리디렉트
 onMounted(() => {
   if (authStore.isAuthenticated) {
-    router.push('/dashboard')
+    router.push(redirectTarget())
   }
 })
 </script>
@@ -81,130 +103,91 @@ onMounted(() => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: var(--space-8);
-  background: linear-gradient(135deg, var(--color-primary-50) 0%, var(--color-secondary-50) 100%);
+  gap: var(--space-6);
+  padding: var(--space-8) var(--space-4);
 }
 
-.login-card {
-  background: var(--color-background);
-  border-radius: var(--border-radius-xl);
-  box-shadow: var(--shadow-lg);
+.back-link {
+  align-self: center;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 44px;
+  width: min(420px, 100%);
+  color: var(--ink);
+  font-family: var(--font-label);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-decoration: none;
+}
+
+.back-link svg {
+  width: 18px;
+  height: 18px;
+}
+
+.login-sheet {
+  width: min(420px, 100%);
   padding: var(--space-8);
-  max-width: 400px;
-  width: 100%;
+  background-color: var(--paper);
+  border: 1.5px solid var(--rule-strong);
 }
 
 .login-header {
-  text-align: center;
-  margin-bottom: var(--space-8);
+  padding-bottom: var(--space-5);
+  margin-bottom: var(--space-6);
+  border-bottom: 2px solid var(--rule-strong);
+}
+
+.login-mark {
+  width: 36px;
+  height: 36px;
+  margin-bottom: var(--space-4);
 }
 
 .login-header h1 {
-  font-size: var(--font-size-3xl);
-  color: var(--color-primary-600);
-  margin-bottom: var(--space-2);
+  font-size: var(--text-display);
+  line-height: 0.9;
+  font-weight: 700;
 }
 
 .subtitle {
-  color: var(--color-text-muted);
-  margin: 0;
+  margin: var(--space-2) 0 0;
+  color: var(--ink-2);
 }
 
 .login-form {
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
+  gap: var(--space-5);
 }
 
-.form-group {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-}
-
-.form-group label {
-  font-weight: var(--font-weight-medium);
-  color: var(--color-text);
-  font-size: var(--font-size-sm);
-}
-
-.form-group input {
-  padding: var(--space-3);
-  border: 1px solid var(--color-border);
-  border-radius: var(--border-radius-md);
-  font-size: var(--font-size-base);
-  transition: all var(--transition-base);
-}
-
-.form-group input:focus {
-  outline: none;
-  border-color: var(--color-primary-500);
-  box-shadow: 0 0 0 3px var(--color-primary-100);
-}
-
-.form-group input:disabled {
-  background-color: var(--color-gray-100);
-  cursor: not-allowed;
-}
-
-.btn-login {
-  padding: var(--space-3) var(--space-6);
-  background-color: var(--color-primary-600);
-  color: white;
-  border: none;
-  border-radius: var(--border-radius-md);
-  font-size: var(--font-size-base);
-  font-weight: var(--font-weight-medium);
-  cursor: pointer;
-  transition: all var(--transition-base);
-}
-
-.btn-login:hover:not(:disabled) {
-  background-color: var(--color-primary-700);
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
-}
-
-.btn-login:disabled {
-  background-color: var(--color-gray-400);
-  cursor: not-allowed;
-  transform: none;
+.login-submit {
+  width: 100%;
+  min-height: 52px;
+  font-size: var(--text-lg);
 }
 
 .error-message {
-  color: var(--color-error-600);
-  font-size: var(--font-size-sm);
-  text-align: center;
   margin: 0;
-  padding: var(--space-2);
-  background-color: var(--color-error-50);
-  border-radius: var(--border-radius-md);
+  padding: var(--space-3);
+  color: var(--red-pencil);
+  border: 1.5px solid var(--red-pencil);
+  font-size: var(--text-sm);
 }
 
 .hint {
-  text-align: center;
-  color: var(--color-text-muted);
-  font-size: var(--font-size-sm);
   margin: 0;
-}
-
-.hint code {
-  background-color: var(--color-gray-100);
-  padding: var(--space-1) var(--space-2);
-  border-radius: var(--border-radius-sm);
-  font-family: var(--font-mono);
+  color: var(--ink-2);
+  font-size: var(--text-sm);
 }
 
 .demo-info {
-  margin-top: var(--space-6);
-  padding-top: var(--space-6);
-  border-top: 1px solid var(--color-border);
-  text-align: center;
-}
-
-.demo-info p {
-  font-size: var(--font-size-sm);
-  color: var(--color-text-muted);
-  margin: 0;
+  margin: var(--space-6) 0 0;
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--rule);
+  font-size: var(--text-sm);
+  color: var(--ink-2);
 }
 </style>

@@ -1,143 +1,180 @@
 <template>
-  <div class="goals-plans-page">
-    <div class="page-header">
-      <h1>Goals & Plans</h1>
-      <p class="page-subtitle">Track long-term objectives and automated DCA investment plans.</p>
-    </div>
+  <div class="page goals-plans-page">
+    <TitleBlock title="Goals & Plans" sheet="03 / 04">
+      Track long-term objectives and automated DCA investment plans.
+    </TitleBlock>
 
-    <div v-if="!authStore.isAuthenticated" class="empty-state">
-      <p>로그인 후 목표와 계획을 관리할 수 있습니다.</p>
-      <router-link to="/login" class="btn-primary">Login</router-link>
-    </div>
+    <EmptySheet v-if="!authStore.isAuthenticated">
+      로그인 후 목표와 계획을 관리할 수 있습니다.
+      <template #action>
+        <router-link to="/login" class="btn btn--primary">Login</router-link>
+      </template>
+    </EmptySheet>
 
-    <div v-else-if="!portfolioStore.currentPortfolio" class="empty-state">
-      <p>먼저 포트폴리오를 생성하거나 선택하세요.</p>
-      <router-link to="/dashboard" class="btn-primary">Go to Dashboard</router-link>
-    </div>
+    <EmptySheet v-else-if="!portfolioStore.currentPortfolio">
+      먼저 포트폴리오를 생성하거나 선택하세요.
+      <template #action>
+        <router-link to="/dashboard" class="btn btn--primary">Go to Dashboard</router-link>
+      </template>
+    </EmptySheet>
 
     <div v-else class="content-grid">
-      <section class="panel">
-        <header class="panel-header">
+      <section class="panel" aria-labelledby="goals-heading">
+        <div class="block-head">
           <div>
-            <h2>Financial Goals</h2>
-            <p class="panel-description">Set measurable targets for your portfolio growth.</p>
+            <h2 id="goals-heading">Financial Goals</h2>
+            <p>Set measurable targets for your portfolio growth.</p>
           </div>
-          <button type="button" class="btn-secondary" @click="toggleGoalForm">
-            {{ showGoalForm ? '취소' : '+ Add Goal' }}
+          <button
+            type="button"
+            class="btn btn--sm"
+            :aria-expanded="showGoalForm"
+            aria-controls="goal-form"
+            @click="toggleGoalForm"
+          >
+            <component :is="showGoalForm ? X : Plus" aria-hidden="true" />
+            {{ showGoalForm ? '취소' : 'Add Goal' }}
           </button>
-        </header>
+        </div>
 
-        <Card v-if="showGoalForm">
-          <form class="form-grid" @submit.prevent="handleCreateGoal">
-            <label>
-              Goal Name
-              <input v-model="goalForm.name" type="text" required placeholder="Retirement Fund" />
-            </label>
-            <label>
-              Target Amount (USD)
-              <input v-model.number="goalForm.targetAmount" type="number" min="1" step="100" required />
-            </label>
-            <label>
-              Current Amount
-              <input v-model.number="goalForm.currentAmount" type="number" min="0" step="100" />
-            </label>
-            <label>
-              Target Date
-              <input v-model="goalForm.targetDate" type="date" required />
-            </label>
-            <div class="form-actions">
-              <button type="submit" class="btn-primary" :disabled="goalPlanStore.isLoadingGoals">
-                {{ goalPlanStore.isLoadingGoals ? 'Saving...' : 'Save Goal' }}
-              </button>
-              <button type="button" class="btn-tertiary" @click="resetGoalForm">Reset</button>
-            </div>
-          </form>
-        </Card>
+        <form v-if="showGoalForm" id="goal-form" class="form-grid entry" @submit.prevent="handleCreateGoal">
+          <div class="field span-2">
+            <label for="goal-name">Goal Name</label>
+            <input id="goal-name" v-model="goalForm.name" type="text" required placeholder="Retirement Fund" />
+          </div>
+          <div class="field">
+            <label for="goal-target">Target Amount (USD)</label>
+            <input id="goal-target" v-model.number="goalForm.targetAmount" type="number" min="1" step="100" required />
+          </div>
+          <div class="field">
+            <label for="goal-current">Current Amount</label>
+            <input id="goal-current" v-model.number="goalForm.currentAmount" type="number" min="0" step="100" />
+          </div>
+          <div class="field">
+            <label for="goal-date">Target Date</label>
+            <input id="goal-date" v-model="goalForm.targetDate" type="date" required />
+          </div>
+          <div class="form-actions">
+            <button type="submit" class="btn btn--primary" :disabled="goalPlanStore.isLoadingGoals">
+              {{ goalPlanStore.isLoadingGoals ? 'Saving...' : 'Save Goal' }}
+            </button>
+            <button type="button" class="btn btn--quiet" @click="resetGoalForm">Reset</button>
+          </div>
+        </form>
 
-        <div v-if="goalPlanStore.isLoadingGoals" class="loading-note">Loading goals...</div>
+        <LoadingSpinner v-if="goalPlanStore.isLoadingGoals" message="Loading goals..." />
         <ul v-else-if="goals.length > 0" class="item-list">
-          <li v-for="goal in goals" :key="goal.id" class="item-card">
-            <div>
-              <h3>{{ goal.name }}</h3>
+          <li v-for="goal in goals" :key="goal.id" class="item">
+            <div class="item-main">
+              <div class="item-title">
+                <h3>{{ goal.name }}</h3>
+                <span class="pct fig">{{ progressOf(goal.currentAmount, goal.targetAmount).toFixed(0) }}%</span>
+              </div>
+              <div
+                class="progress"
+                role="progressbar"
+                :aria-valuenow="Math.round(progressOf(goal.currentAmount, goal.targetAmount))"
+                aria-valuemin="0"
+                aria-valuemax="100"
+                :aria-label="`${goal.name} progress`"
+              >
+                <span class="progress-fill" :style="{ width: `${progressOf(goal.currentAmount, goal.targetAmount)}%` }"></span>
+              </div>
               <dl class="item-meta">
                 <div>
-                  <dt>Target Amount</dt>
-                  <dd>${{ formatCurrency(goal.targetAmount) }}</dd>
+                  <dt>Current Amount</dt>
+                  <dd class="fig">${{ formatCurrency(goal.currentAmount) }}</dd>
                 </div>
                 <div>
-                  <dt>Current Amount</dt>
-                  <dd>${{ formatCurrency(goal.currentAmount) }}</dd>
+                  <dt>Target Amount</dt>
+                  <dd class="fig">${{ formatCurrency(goal.targetAmount) }}</dd>
                 </div>
                 <div>
                   <dt>Target Date</dt>
-                  <dd>{{ formatDate(goal.targetDate) }}</dd>
+                  <dd class="fig">{{ formatDate(goal.targetDate) }}</dd>
                 </div>
               </dl>
             </div>
-            <button class="btn-danger" type="button" @click="handleDeleteGoal(goal.id)">Delete</button>
+            <button
+              class="icon-btn"
+              type="button"
+              :aria-label="`Delete goal ${goal.name}`"
+              title="Delete"
+              @click="handleDeleteGoal(goal.id)"
+            >
+              <Trash2 aria-hidden="true" />
+            </button>
           </li>
         </ul>
-        <div v-else class="empty-note">아직 등록된 목표가 없습니다.</div>
+        <EmptySheet v-else compact>아직 등록된 목표가 없습니다.</EmptySheet>
       </section>
 
-      <section class="panel">
-        <header class="panel-header">
+      <section class="panel" aria-labelledby="plans-heading">
+        <div class="block-head">
           <div>
-            <h2>Recurring Plans</h2>
-            <p class="panel-description">Automate dollar-cost averaging with recurring buy plans.</p>
+            <h2 id="plans-heading">Recurring Plans</h2>
+            <p>Automate dollar-cost averaging with recurring buy plans.</p>
           </div>
-          <button type="button" class="btn-secondary" @click="togglePlanForm">
-            {{ showPlanForm ? '취소' : '+ Add Plan' }}
+          <button
+            type="button"
+            class="btn btn--sm"
+            :aria-expanded="showPlanForm"
+            aria-controls="plan-form"
+            @click="togglePlanForm"
+          >
+            <component :is="showPlanForm ? X : Plus" aria-hidden="true" />
+            {{ showPlanForm ? '취소' : 'Add Plan' }}
           </button>
-        </header>
+        </div>
 
-        <Card v-if="showPlanForm">
-          <form class="form-grid" @submit.prevent="handleCreatePlan">
-            <label>
-              Symbol
-              <input v-model="planForm.symbol" type="text" required placeholder="AAPL" />
-            </label>
-            <label>
-              Amount per Interval (USD)
-              <input v-model.number="planForm.amountPerInterval" type="number" min="1" step="10" required />
-            </label>
-            <label>
-              Interval
-              <select v-model="planForm.interval" required>
-                <option value="WEEKLY">Weekly</option>
-                <option value="MONTHLY">Monthly</option>
-              </select>
-            </label>
-            <label>
-              Start Date
-              <input v-model="planForm.startDate" type="date" required />
-            </label>
-            <label>
-              End Date (Optional)
-              <input v-model="planForm.endDate" type="date" />
-            </label>
-            <label class="checkbox-field">
-              <input v-model="planForm.isActive" type="checkbox" />
-              Active
-            </label>
-            <div class="form-actions">
-              <button type="submit" class="btn-primary" :disabled="goalPlanStore.isLoadingPlans">
-                {{ goalPlanStore.isLoadingPlans ? 'Saving...' : 'Save Plan' }}
-              </button>
-              <button type="button" class="btn-tertiary" @click="resetPlanForm">Reset</button>
-            </div>
-          </form>
-        </Card>
+        <form v-if="showPlanForm" id="plan-form" class="form-grid entry" @submit.prevent="handleCreatePlan">
+          <div class="field">
+            <label for="plan-symbol">Symbol</label>
+            <input id="plan-symbol" v-model="planForm.symbol" type="text" required placeholder="AAPL" />
+          </div>
+          <div class="field">
+            <label for="plan-amount">Amount per Interval (USD)</label>
+            <input id="plan-amount" v-model.number="planForm.amountPerInterval" type="number" min="1" step="10" required />
+          </div>
+          <div class="field">
+            <label for="plan-interval">Interval</label>
+            <select id="plan-interval" v-model="planForm.interval" required>
+              <option value="WEEKLY">Weekly</option>
+              <option value="MONTHLY">Monthly</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="plan-start">Start Date</label>
+            <input id="plan-start" v-model="planForm.startDate" type="date" required />
+          </div>
+          <div class="field">
+            <label for="plan-end">End Date (Optional)</label>
+            <input id="plan-end" v-model="planForm.endDate" type="date" />
+          </div>
+          <label class="field field--check">
+            <input v-model="planForm.isActive" type="checkbox" />
+            Active
+          </label>
+          <div class="form-actions">
+            <button type="submit" class="btn btn--primary" :disabled="goalPlanStore.isLoadingPlans">
+              {{ goalPlanStore.isLoadingPlans ? 'Saving...' : 'Save Plan' }}
+            </button>
+            <button type="button" class="btn btn--quiet" @click="resetPlanForm">Reset</button>
+          </div>
+        </form>
 
-        <div v-if="goalPlanStore.isLoadingPlans" class="loading-note">Loading plans...</div>
+        <LoadingSpinner v-if="goalPlanStore.isLoadingPlans" message="Loading plans..." />
         <ul v-else-if="plans.length > 0" class="item-list">
-          <li v-for="plan in plans" :key="plan.id" class="item-card">
-            <div>
-              <h3>{{ plan.symbol }}</h3>
+          <li v-for="plan in plans" :key="plan.id" class="item">
+            <div class="item-main">
+              <div class="item-title">
+                <h3>{{ plan.symbol }}</h3>
+                <span class="status" :class="{ paused: !plan.isActive }">{{ plan.isActive ? 'Active' : 'Paused' }}</span>
+              </div>
               <dl class="item-meta">
                 <div>
                   <dt>Amount</dt>
-                  <dd>${{ formatCurrency(plan.amountPerInterval) }}</dd>
+                  <dd class="fig">${{ formatCurrency(plan.amountPerInterval) }}</dd>
                 </div>
                 <div>
                   <dt>Interval</dt>
@@ -145,14 +182,22 @@
                 </div>
                 <div>
                   <dt>Duration</dt>
-                  <dd>{{ formatPlanDuration(plan.startDate, plan.endDate) }}</dd>
+                  <dd class="fig">{{ formatPlanDuration(plan.startDate, plan.endDate) }}</dd>
                 </div>
               </dl>
             </div>
-            <button class="btn-danger" type="button" @click="handleDeletePlan(plan.id)">Delete</button>
+            <button
+              class="icon-btn"
+              type="button"
+              :aria-label="`Delete plan ${plan.symbol}`"
+              title="Delete"
+              @click="handleDeletePlan(plan.id)"
+            >
+              <Trash2 aria-hidden="true" />
+            </button>
           </li>
         </ul>
-        <div v-else class="empty-note">등록된 투자 계획이 없습니다.</div>
+        <EmptySheet v-else compact>등록된 투자 계획이 없습니다.</EmptySheet>
       </section>
     </div>
   </div>
@@ -161,7 +206,10 @@
 <script setup lang="ts">
 import { reactive, computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import Card from '@/components/common/Card.vue'
+import { Plus, X, Trash2 } from 'lucide-vue-next'
+import TitleBlock from '@/components/pad/TitleBlock.vue'
+import EmptySheet from '@/components/pad/EmptySheet.vue'
+import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import { useAuthStore } from '@/stores/authStore'
 import { usePortfolioStore } from '@/stores/portfolioStore'
 import { useGoalPlanStore } from '@/stores/goalPlanStore'
@@ -195,10 +243,14 @@ const planForm = reactive({
   isActive: true
 })
 
-function ensurePortfolio() {
+async function ensurePortfolio() {
   if (!authStore.isAuthenticated) {
     router.push('/login')
     return false
+  }
+  // 새로고침으로 직접 진입한 경우 포트폴리오를 먼저 불러온다 (대시보드로 튕기지 않도록)
+  if (!portfolioStore.currentPortfolio) {
+    await portfolioStore.fetchPortfolios()
   }
   if (!portfolioStore.currentPortfolio) {
     router.push('/dashboard')
@@ -208,7 +260,7 @@ function ensurePortfolio() {
 }
 
 async function loadData() {
-  if (!ensurePortfolio()) return
+  if (!(await ensurePortfolio())) return
   const portfolioId = portfolioStore.currentPortfolio!.id
   await Promise.all([
     goalPlanStore.fetchGoals(portfolioId),
@@ -302,6 +354,12 @@ async function handleDeletePlan(planId: number) {
   }
 }
 
+// 목표 달성률 (0-100%)
+function progressOf(current: number, target: number) {
+  if (!target || target <= 0) return 0
+  return Math.min(100, Math.max(0, (current / target) * 100))
+}
+
 function formatCurrency(value: number) {
   return value.toLocaleString('en-US', { maximumFractionDigits: 0 })
 }
@@ -323,217 +381,162 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.goals-plans-page {
-  min-height: 100vh;
-  padding: var(--space-6);
-  background-color: var(--color-gray-50);
-}
-
-.page-header {
-  max-width: 960px;
-  margin: 0 auto var(--space-8);
-}
-
-.page-header h1 {
-  margin: 0;
-  font-size: var(--font-size-3xl);
-}
-
-.page-subtitle {
-  margin-top: var(--space-2);
-  color: var(--color-text-muted);
-}
-
-.empty-state {
-  max-width: 640px;
-  margin: var(--space-12) auto;
-  padding: var(--space-10);
-  background-color: var(--color-background);
-  border-radius: var(--border-radius-2xl);
-  text-align: center;
-  box-shadow: var(--shadow-lg);
-}
-
 .content-grid {
-  max-width: 1200px;
-  margin: 0 auto;
   display: grid;
-  gap: var(--space-6);
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-12);
+  align-items: start;
 }
 
-.panel {
-  background-color: var(--color-background);
-  border-radius: var(--border-radius-2xl);
-  box-shadow: var(--shadow-md);
-  padding: var(--space-6);
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
+.panel .block-head {
+  align-items: flex-end;
 }
 
-.panel-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: var(--space-4);
-}
-
-.panel-description {
-  margin: var(--space-1) 0 0;
-  color: var(--color-text-muted);
-  font-size: var(--font-size-sm);
+.panel .block-head p {
+  margin-top: var(--space-1);
 }
 
 .form-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--space-4);
 }
 
-.form-grid label {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-  font-size: var(--font-size-sm);
-  color: var(--color-text);
+.entry {
+  padding-bottom: var(--space-5);
+  margin-bottom: var(--space-4);
+  border-bottom: 3px double var(--rule-strong);
 }
 
-.form-grid input,
-.form-grid select {
-  padding: var(--space-2) var(--space-3);
-  border: 1px solid var(--color-border);
-  border-radius: var(--border-radius-md);
-  font-size: var(--font-size-sm);
-}
-
-.checkbox-field {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
+.span-2 {
+  grid-column: 1 / -1;
 }
 
 .form-actions {
   grid-column: 1 / -1;
   display: flex;
-  gap: var(--space-3);
-}
-
-.btn-primary,
-.btn-secondary,
-.btn-tertiary,
-.btn-danger {
-  padding: var(--space-2) var(--space-4);
-  border-radius: var(--border-radius-md);
-  border: none;
-  font-weight: var(--font-weight-medium);
-  cursor: pointer;
-  transition: all var(--transition-base);
-}
-
-.btn-primary {
-  background-color: var(--color-primary-600);
-  color: #fff;
-}
-
-.btn-secondary {
-  background-color: var(--color-gray-200);
-}
-
-.btn-tertiary {
-  background-color: transparent;
-  color: var(--color-primary-600);
-}
-
-.btn-danger {
-  background-color: var(--color-error-600);
-  color: #fff;
-}
-
-.btn-primary:hover {
-  background-color: var(--color-primary-700);
-}
-
-.btn-secondary:hover {
-  background-color: var(--color-gray-300);
-}
-
-.btn-tertiary:hover {
-  text-decoration: underline;
-}
-
-.btn-danger:hover {
-  background-color: var(--color-error-500);
+  gap: var(--space-2);
 }
 
 .item-list {
   list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
 }
 
-.item-card {
+.item {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
   gap: var(--space-4);
-  padding: var(--space-4);
-  border: 1px solid var(--color-border);
-  border-radius: var(--border-radius-xl);
+  align-items: flex-start;
+  padding: var(--space-5) 0;
+  border-bottom: 1px solid var(--rule);
 }
 
-.item-card h3 {
-  margin: 0 0 var(--space-2);
+.item-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.item-title {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
+.item-title h3 {
+  font-size: var(--text-xl);
+  font-weight: 700;
+}
+
+.pct {
+  font-size: var(--text-lg);
+  font-weight: 600;
+}
+
+.progress {
+  position: relative;
+  height: 12px;
+  margin-bottom: var(--space-3);
+  border: 1.5px solid var(--rule-strong);
+  /* unfilled part keeps the pad's grid */
+  background-image: repeating-linear-gradient(90deg, transparent 0 9px, var(--rule) 9px 10px);
+}
+
+.progress-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: repeating-linear-gradient(-45deg, var(--ink) 0 2px, transparent 2px 5px);
+}
+
+.status {
+  font-family: var(--font-label);
+  font-weight: 700;
+  font-size: var(--text-xs);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  padding: 1px 6px;
+  border: 1px solid currentColor;
+}
+
+.status.paused {
+  color: var(--ink-3);
 }
 
 .item-meta {
   display: grid;
-  gap: var(--space-2);
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-3);
   margin: 0;
 }
 
 .item-meta dt {
-  font-size: var(--font-size-xs);
-  font-weight: var(--font-weight-semibold);
+  font-family: var(--font-label);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: var(--tracking-label);
   text-transform: uppercase;
-  color: var(--color-text-muted);
+  color: var(--ink-3);
 }
 
 .item-meta dd {
   margin: 0;
-  font-size: var(--font-size-sm);
+  font-size: var(--text-sm);
 }
 
-.empty-note {
-  padding: var(--space-4);
-  text-align: center;
-  color: var(--color-text-muted);
-  background-color: var(--color-gray-100);
-  border-radius: var(--border-radius-lg);
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  flex: none;
+  color: var(--ink-2);
+  border: 1px solid transparent;
 }
 
-.loading-note {
-  color: var(--color-text-muted);
-  font-size: var(--font-size-sm);
+.icon-btn:hover {
+  color: var(--red-pencil);
+  border-color: var(--red-pencil);
 }
 
-@media (max-width: 768px) {
+.icon-btn svg {
+  width: 18px;
+  height: 18px;
+}
+
+@media (max-width: 1000px) {
   .content-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 560px) {
+  .form-grid {
+    grid-template-columns: minmax(0, 1fr);
   }
 
-  .item-card {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .form-actions {
-    flex-direction: column;
-    align-items: stretch;
+  .item-meta {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 </style>
