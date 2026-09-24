@@ -1,83 +1,117 @@
 <template>
-  <nav class="navbar">
-    <div class="navbar-container">
-      <router-link to="/" class="navbar-brand">
-        <span class="brand-logo">📊</span>
+  <nav class="binding" :aria-label="t('nav.primary')">
+    <div class="binding-inner">
+      <router-link to="/" class="brand" @click="closeMenu">
+        <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true">
+          <rect x="1" y="1" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2" />
+          <path d="M5 24 L11 17 L16 20 L27 7" fill="none" stroke="currentColor" stroke-width="2.6" />
+          <path d="M5 27 H27" stroke="var(--highlight)" stroke-width="3" />
+        </svg>
         <span class="brand-name">FinLab</span>
       </router-link>
 
-      <div v-if="authStore.isAuthenticated" class="navbar-menu">
-        <router-link to="/dashboard" class="nav-link" active-class="active">
-          {{ t('nav.dashboard') }}
-        </router-link>
-        <router-link to="/transactions" class="nav-link" active-class="active">
-          {{ t('nav.transactions') }}
-        </router-link>
-        <router-link to="/goals-plans" class="nav-link" active-class="active">
-          {{ t('nav.goalsPlans') }}
-        </router-link>
-        <router-link to="/backtest" class="nav-link" active-class="active">
-          {{ t('nav.backtestLab') }}
-        </router-link>
-      </div>
+      <button
+        type="button"
+        class="menu-toggle"
+        :aria-expanded="menuOpen"
+        aria-controls="nav-drawer"
+        @click="menuOpen = !menuOpen"
+      >
+        <component :is="menuOpen ? X : Menu" aria-hidden="true" />
+        <span>{{ t('nav.menu') }}</span>
+      </button>
 
-      <div class="navbar-right">
-        <div class="language-control" role="group" aria-label="Language toggle">
-          <label class="control-label" for="language-select">{{ t('nav.language') }}</label>
-          <select
-            id="language-select"
-            v-model="currentLocale"
-            class="language-select"
-          >
-            <option value="ko">{{ t('nav.korean') }}</option>
-            <option value="en">{{ t('nav.english') }}</option>
-          </select>
-        </div>
-        <div class="backend-control" role="group" aria-label="Backend mode toggle">
-          <label class="control-label" for="backend-mode">{{ t('nav.backend') }}</label>
-          <select
-            id="backend-mode"
-            v-model="backendMode"
-            class="backend-select"
-            aria-describedby="backend-mode-hint"
-          >
-            <option value="mock">{{ t('nav.mock') }}</option>
-            <option value="live">{{ t('nav.live') }}</option>
-          </select>
-          <input
-            id="backend-url"
-            v-model="backendUrl"
-            type="url"
-            class="backend-input"
-            :disabled="backendMode === 'mock'"
-            placeholder="https://finlab-api.fly.dev"
-          />
-          <button
-            type="button"
-            class="btn-connect"
-            :disabled="backendMode === 'mock'"
-            @click="handleConnectLive"
-          >
-            {{ t('common.connect') }}
+      <div id="nav-drawer" class="drawer" :class="{ open: menuOpen }">
+        <ul v-if="authStore.isAuthenticated" class="sheets">
+          <li v-for="item in sheets" :key="item.to">
+            <router-link :to="item.to" class="sheet-tab" active-class="active" @click="closeMenu">
+              <span class="sheet-no fig" aria-hidden="true">{{ item.no }}</span>
+              <span>{{ t(item.label) }}</span>
+            </router-link>
+          </li>
+        </ul>
+        <ul class="appendix">
+          <li>
+            <router-link to="/api-playground" class="appendix-link" active-class="active" @click="closeMenu">
+              {{ t('nav.apiPlayground') }}
+            </router-link>
+          </li>
+          <li>
+            <router-link to="/docs" class="appendix-link" active-class="active" @click="closeMenu">
+              {{ t('nav.docs') }}
+            </router-link>
+          </li>
+        </ul>
+
+        <div class="tools">
+          <details ref="settingsRef" class="settings">
+            <summary class="settings-summary">
+              <Settings2 aria-hidden="true" />
+              <span>{{ t('nav.settings') }}</span>
+              <span class="mode-chip" :class="{ live: backendMode === 'live' }">
+                {{ backendMode === 'mock' ? t('nav.mock') : t('nav.live') }}
+              </span>
+            </summary>
+            <div class="settings-panel">
+              <div class="field">
+                <label for="language-select">{{ t('nav.language') }}</label>
+                <select id="language-select" v-model="currentLocale">
+                  <option value="ko">{{ t('nav.korean') }}</option>
+                  <option value="en">{{ t('nav.english') }}</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="backend-mode">{{ t('nav.backend') }}</label>
+                <select id="backend-mode" v-model="backendMode" aria-describedby="backend-mode-hint">
+                  <option value="mock">{{ t('nav.mock') }}</option>
+                  <option value="live">{{ t('nav.live') }}</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="backend-url">{{ t('nav.backendUrl') }}</label>
+                <input
+                  id="backend-url"
+                  v-model="backendUrl"
+                  type="url"
+                  :disabled="backendMode === 'mock'"
+                  placeholder="https://finlab-api.fly.dev"
+                />
+              </div>
+              <button
+                type="button"
+                class="btn btn--sm"
+                :disabled="backendMode === 'mock'"
+                @click="handleConnectLive"
+              >
+                <PlugZap aria-hidden="true" />
+                {{ t('common.connect') }}
+              </button>
+              <p id="backend-mode-hint" class="hint">{{ t('nav.backendHint') }}</p>
+            </div>
+          </details>
+
+          <span v-if="authStore.isAuthenticated" class="user-email truncate">
+            {{ authStore.currentUserEmail }}
+          </span>
+          <button v-if="authStore.isAuthenticated" type="button" class="bind-btn" @click="handleLogout">
+            <LogOut aria-hidden="true" />
+            {{ t('common.logout') }}
           </button>
-          <span id="backend-mode-hint" class="control-hint">{{ t('nav.backendHint') }}</span>
+          <router-link v-else to="/login" class="bind-btn" @click="closeMenu">
+            <LogIn aria-hidden="true" />
+            {{ t('common.login') }}
+          </router-link>
         </div>
-        <span v-if="authStore.isAuthenticated" class="user-email">
-          {{ authStore.currentUserEmail }}
-        </span>
-        <button v-if="authStore.isAuthenticated" @click="handleLogout" class="btn-logout">
-          {{ t('common.logout') }}
-        </button>
-        <router-link v-else to="/login" class="btn-login">{{ t('common.login') }}</router-link>
       </div>
     </div>
   </nav>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
-import { useRouter } from 'vue-router'
+import { computed, ref, watch, onMounted, onBeforeUnmount } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
+import { Menu, X, Settings2, PlugZap, LogOut, LogIn } from 'lucide-vue-next'
 import { useAuthStore } from '@/stores/authStore'
 import { usePortfolioStore } from '@/stores/portfolioStore'
 import { useTransactionStore } from '@/stores/transactionStore'
@@ -87,6 +121,7 @@ import { useConfigStore, type BackendMode, type Locale } from '@/stores/configSt
 import { useToast } from '@/composables/useToast'
 
 const router = useRouter()
+const route = useRoute()
 const { t, locale } = useI18n()
 const authStore = useAuthStore()
 const portfolioStore = usePortfolioStore()
@@ -95,6 +130,16 @@ const goalPlanStore = useGoalPlanStore()
 const analyticsStore = useAnalyticsStore()
 const configStore = useConfigStore()
 const toast = useToast()
+
+const menuOpen = ref(false)
+const settingsRef = ref<HTMLDetailsElement | null>(null)
+
+const sheets = [
+  { to: '/dashboard', no: '01', label: 'nav.dashboard' },
+  { to: '/transactions', no: '02', label: 'nav.transactions' },
+  { to: '/goals-plans', no: '03', label: 'nav.goalsPlans' },
+  { to: '/backtest', no: '04', label: 'nav.backtestLab' }
+]
 
 const backendMode = computed({
   get: () => configStore.backendMode,
@@ -117,6 +162,14 @@ const currentLocale = computed({
   }
 })
 
+function closeMenu() {
+  menuOpen.value = false
+}
+
+function closeSettings() {
+  if (settingsRef.value) settingsRef.value.open = false
+}
+
 // 로그아웃 처리
 function handleLogout() {
   authStore.logout()
@@ -124,6 +177,7 @@ function handleLogout() {
   transactionStore.reset()
   goalPlanStore.reset()
   analyticsStore.reset()
+  closeMenu()
   router.push('/login')
 }
 
@@ -136,197 +190,359 @@ function handleConnectLive() {
   configStore.setBackendMode('live')
   toast.success(t('nav.liveConnecting'))
 }
+
+function handleDocumentClick(event: MouseEvent) {
+  const el = settingsRef.value
+  if (el?.open && !el.contains(event.target as Node)) closeSettings()
+}
+
+function handleKeydown(event: KeyboardEvent) {
+  if (event.key !== 'Escape') return
+  if (settingsRef.value?.open) {
+    closeSettings()
+    settingsRef.value.querySelector('summary')?.focus()
+  } else if (menuOpen.value) {
+    closeMenu()
+  }
+}
+
+watch(
+  () => route.fullPath,
+  () => {
+    closeMenu()
+    closeSettings()
+  }
+)
+
+onMounted(() => {
+  document.addEventListener('click', handleDocumentClick)
+  document.addEventListener('keydown', handleKeydown)
+})
+
+onBeforeUnmount(() => {
+  document.removeEventListener('click', handleDocumentClick)
+  document.removeEventListener('keydown', handleKeydown)
+})
 </script>
 
 <style scoped>
-.navbar {
-  background-color: var(--color-background);
-  border-bottom: 1px solid var(--color-border);
+.binding {
   position: sticky;
   top: 0;
   z-index: 100;
-  box-shadow: var(--shadow-sm);
+  background-color: var(--binding);
+  color: var(--binding-ink);
+  border-bottom: 3px solid var(--rule-strong);
 }
 
-.navbar-container {
-  max-width: 1400px;
+.binding-inner {
+  max-width: var(--page-max);
   margin: 0 auto;
-  padding: var(--space-4) var(--space-6);
+  padding: 0 var(--space-6);
+  min-height: 60px;
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  align-items: stretch;
   gap: var(--space-6);
 }
 
-.navbar-brand {
-  display: flex;
+.brand {
+  display: inline-flex;
   align-items: center;
   gap: var(--space-2);
+  color: var(--binding-ink);
   text-decoration: none;
-  font-weight: var(--font-weight-bold);
-  font-size: var(--font-size-lg);
-  color: var(--color-text);
+  font-family: var(--font-label);
+  font-weight: 700;
+  font-size: 1.5rem;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
 }
 
-.brand-logo {
-  font-size: var(--font-size-2xl);
+.brand-mark {
+  width: 26px;
+  height: 26px;
 }
 
-.brand-name {
-  color: var(--color-primary-600);
+.menu-toggle {
+  display: none;
 }
 
-.navbar-menu {
-  display: flex;
-  gap: var(--space-4);
+.drawer {
   flex: 1;
-}
-
-.nav-link {
-  padding: var(--space-2) var(--space-4);
-  text-decoration: none;
-  color: var(--color-text-muted);
-  font-weight: var(--font-weight-medium);
-  border-radius: var(--border-radius-md);
-  transition: all var(--transition-base);
-}
-
-.nav-link:hover {
-  color: var(--color-text);
-  background-color: var(--color-gray-100);
-}
-
-.nav-link.active {
-  color: var(--color-primary-600);
-  background-color: var(--color-primary-50);
-}
-
-.navbar-right {
   display: flex;
+  align-items: stretch;
+  gap: var(--space-6);
+  min-width: 0;
+}
+
+.sheets,
+.appendix {
+  list-style: none;
+  display: flex;
+  align-items: stretch;
+}
+
+.sheets li,
+.appendix li {
+  display: flex;
+}
+
+.sheet-tab {
+  display: inline-flex;
   align-items: center;
+  gap: var(--space-2);
+  padding: 0 var(--space-4);
+  margin-bottom: -3px;
+  color: var(--binding-muted);
+  text-decoration: none;
+  font-family: var(--font-label);
+  font-size: 1.0625rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  border: 1.5px solid transparent;
+  border-bottom: 0;
+  transition: color var(--dur-fast) var(--ease-out), background-color var(--dur-fast) var(--ease-out);
+  white-space: nowrap;
+}
+
+.sheet-no {
+  font-size: 0.75rem;
+  opacity: 0.8;
+}
+
+.sheet-tab:hover {
+  color: var(--binding-ink);
+}
+
+/* the active sheet is torn to the front: it takes the paper's colour and joins the page */
+.sheet-tab.active {
+  background-color: var(--paper);
+  color: var(--ink);
+  border-color: var(--rule-strong);
+}
+
+.appendix {
   gap: var(--space-4);
 }
 
-.language-control {
+.appendix-link {
+  display: inline-flex;
+  align-items: center;
+  color: var(--binding-muted);
+  font-size: var(--text-sm);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.appendix-link:hover,
+.appendix-link.active {
+  color: var(--binding-ink);
+  text-decoration: underline;
+  text-underline-offset: 0.3em;
+}
+
+.tools {
+  margin-left: auto;
   display: flex;
   align-items: center;
-  gap: var(--space-2);
+  gap: var(--space-4);
+  min-width: 0;
 }
 
-.language-select {
-  padding: var(--space-2) var(--space-3);
-  border: 1px solid var(--color-border);
-  border-radius: var(--border-radius-md);
-  font-size: var(--font-size-sm);
-  background-color: var(--color-background);
-  cursor: pointer;
+.settings {
+  position: relative;
 }
 
-.backend-control {
-  display: grid;
-  grid-template-columns: auto auto minmax(220px, 1fr) auto;
-  gap: var(--space-2);
+.settings-summary {
+  list-style: none;
+  display: inline-flex;
   align-items: center;
-}
-
-.control-label {
-  font-size: var(--font-size-sm);
-  color: var(--color-text-muted);
-}
-
-.backend-select,
-.backend-input {
-  padding: var(--space-2) var(--space-3);
-  border: 1px solid var(--color-border);
-  border-radius: var(--border-radius-md);
-  font-size: var(--font-size-sm);
-}
-
-.backend-input:disabled {
-  background-color: var(--color-gray-100);
-  color: var(--color-text-muted);
-}
-
-.btn-connect {
-  padding: var(--space-2) var(--space-4);
-  background-color: var(--color-primary-600);
-  color: #fff;
-  border: none;
-  border-radius: var(--border-radius-md);
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-medium);
+  gap: var(--space-2);
+  min-height: 40px;
+  padding: 0 var(--space-3);
+  color: var(--binding-ink);
+  font-size: var(--text-sm);
   cursor: pointer;
-  transition: all var(--transition-base);
+  border: 1px solid color-mix(in srgb, var(--binding-ink) 30%, transparent);
+  white-space: nowrap;
 }
 
-.btn-connect:disabled {
-  background-color: var(--color-gray-300);
-  cursor: not-allowed;
+.settings-summary::-webkit-details-marker {
+  display: none;
 }
 
-.btn-connect:not(:disabled):hover {
-  background-color: var(--color-primary-700);
+.settings-summary svg,
+.bind-btn svg,
+.menu-toggle svg {
+  width: 18px;
+  height: 18px;
 }
 
-.control-hint {
-  grid-column: 1 / -1;
-  font-size: var(--font-size-xs);
-  color: var(--color-text-muted);
+.settings[open] .settings-summary {
+  background-color: var(--paper);
+  color: var(--ink);
+}
+
+.mode-chip {
+  font-family: var(--font-label);
+  font-weight: 700;
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  font-size: var(--text-xs);
+  padding: 1px 6px;
+  border: 1px solid currentColor;
+}
+
+.mode-chip.live {
+  background-color: var(--highlight);
+  color: var(--highlight-ink);
+  border-color: var(--highlight);
+}
+
+.settings-panel {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  width: min(320px, 90vw);
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  background-color: var(--paper);
+  color: var(--ink);
+  border: 1.5px solid var(--rule-strong);
+  box-shadow: var(--shadow-lg);
+  z-index: 10;
+}
+
+.hint {
+  margin: 0;
+  font-size: var(--text-xs);
+  color: var(--ink-2);
 }
 
 .user-email {
-  font-size: var(--font-size-sm);
-  color: var(--color-text-muted);
+  max-width: 14rem;
+  font-size: var(--text-sm);
+  color: var(--binding-muted);
 }
 
-.btn-logout,
-.btn-login {
-  padding: var(--space-2) var(--space-4);
-  background-color: var(--color-gray-200);
-  color: var(--color-text);
-  border: none;
-  border-radius: var(--border-radius-md);
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-medium);
-  cursor: pointer;
-  transition: all var(--transition-base);
+.bind-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 40px;
+  padding: 0 var(--space-3);
+  color: var(--binding-ink);
+  font-family: var(--font-label);
+  font-size: var(--text-base);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
   text-decoration: none;
-  display: inline-block;
+  white-space: nowrap;
+  border: 1px solid color-mix(in srgb, var(--binding-ink) 30%, transparent);
 }
 
-.btn-logout:hover,
-.btn-login:hover {
-  background-color: var(--color-gray-300);
+.bind-btn:hover,
+.settings-summary:hover {
+  border-color: var(--binding-ink);
+  text-decoration: none;
 }
 
-@media (max-width: 768px) {
-  .navbar-container {
-    flex-direction: column;
-    gap: var(--space-3);
-  }
+.binding :focus-visible {
+  outline-color: var(--highlight);
+}
 
-  .navbar-menu {
-    flex-direction: column;
-    width: 100%;
-  }
-
-  .navbar-right {
-    width: 100%;
-    justify-content: space-between;
-    flex-wrap: wrap;
-  }
-
-  .backend-control {
-    grid-template-columns: repeat(2, 1fr);
-    width: 100%;
-  }
-
-  .backend-input {
-    min-width: 0;
-  }
-
+@media (max-width: 1100px) {
   .user-email {
     display: none;
+  }
+}
+
+@media (max-width: 960px) {
+  .binding-inner {
+    flex-wrap: wrap;
+    padding: 0 var(--space-4);
+    gap: 0;
+    justify-content: space-between;
+  }
+
+  .menu-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    align-self: center;
+    min-height: 44px;
+    padding: 0 var(--space-3);
+    color: var(--binding-ink);
+    font-family: var(--font-label);
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    border: 1px solid color-mix(in srgb, var(--binding-ink) 30%, transparent);
+  }
+
+  .drawer {
+    display: none;
+    flex-basis: 100%;
+    flex-direction: column;
+    gap: var(--space-4);
+    padding: var(--space-2) 0 var(--space-5);
+  }
+
+  .drawer.open {
+    display: flex;
+  }
+
+  .sheets {
+    flex-direction: column;
+  }
+
+  .sheet-tab {
+    min-height: 48px;
+    width: 100%;
+    margin-bottom: 0;
+    padding: 0 var(--space-3);
+    border-bottom: 1px solid color-mix(in srgb, var(--binding-ink) 18%, transparent);
+  }
+
+  .sheet-tab.active {
+    border-bottom-color: var(--rule-strong);
+  }
+
+  .appendix {
+    gap: var(--space-5);
+    padding: 0 var(--space-3);
+  }
+
+  .appendix-link {
+    min-height: 44px;
+  }
+
+  .tools {
+    margin-left: 0;
+    flex-wrap: wrap;
+    padding: 0 var(--space-3);
+  }
+
+  .settings {
+    width: 100%;
+  }
+
+  .settings-summary {
+    min-height: 44px;
+  }
+
+  .settings-panel {
+    position: static;
+    width: 100%;
+    margin-top: var(--space-2);
+    box-shadow: none;
+  }
+
+  .bind-btn {
+    min-height: 44px;
   }
 }
 </style>

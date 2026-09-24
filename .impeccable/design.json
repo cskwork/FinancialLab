@@ -1,0 +1,121 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-24T17:30:00+09:00",
+  "title": "Design System: FinLab",
+  "extensions": {
+    "colorMeta": {
+      "paper": { "role": "neutral", "displayName": "Pad Paper", "canonical": "#e5eed8", "tonalRamp": ["#1f2a18", "#34452b", "#4d6242", "#6a805d", "#8ca17e", "#b3c5a4", "#d8e4c8", "#eef4e5"] },
+      "ink": { "role": "primary", "displayName": "Graphite", "canonical": "#1b221e", "tonalRamp": ["#0e1310", "#1b221e", "#2f3a33", "#435047", "#56645a", "#7a877d", "#a4afa6", "#d0d7d1"] },
+      "red-pencil": { "role": "secondary", "displayName": "Red Pencil", "canonical": "#a8231b", "tonalRamp": ["#3d0b08", "#651510", "#8a1d16", "#a8231b", "#c9483f", "#e0786f", "#f0aaa3", "#fad9d5"] },
+      "blue-pencil": { "role": "secondary", "displayName": "Blue Pencil", "canonical": "#1d4a94", "tonalRamp": ["#0a1a36", "#12295a", "#1a3a7c", "#1d4a94", "#3f68b0", "#6f90c9", "#a5bde0", "#d9e4f3"] },
+      "highlight": { "role": "tertiary", "displayName": "Highlighter", "canonical": "#f1df4f", "tonalRamp": ["#4a430e", "#7a6e17", "#a99a22", "#d4c236", "#f1df4f", "#f5e87d", "#f9f0ad", "#fcf8dc"] },
+      "binding": { "role": "neutral", "displayName": "Binding Strip", "canonical": "#1c2a21" },
+      "blueprint-paper": { "role": "neutral", "displayName": "Blueprint (dark ground)", "canonical": "#0f3257", "tonalRamp": ["#051326", "#081d35", "#0b2847", "#0f3257", "#154072", "#2a5a92", "#5d86b8", "#a3bad5"] }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display lettering", "purpose": "Landing wordmark and login title only." },
+      "title": { "displayName": "Title", "purpose": "H1 inside each sheet's title block." },
+      "heading": { "displayName": "Block heading", "purpose": "h2 on a 2px inked rule." },
+      "label": { "displayName": "Label", "purpose": "Field labels, table heads, tabs, buttons." },
+      "figure": { "displayName": "Figure", "purpose": "All amounts, dates, counts and chart ticks; tabular numerals." },
+      "body": { "displayName": "Body", "purpose": "Prose, notes and Korean text." }
+    },
+    "shadows": [
+      { "name": "float", "value": "0 8px 24px -8px rgb(27 34 30 / 0.25)", "purpose": "Settings panel and toast slips floating over the sheet (blueprint: rgb(0 0 0 / 0.5))." }
+    ],
+    "motion": [
+      { "name": "ease-out", "value": "cubic-bezier(0.16, 1, 0.3, 1)", "purpose": "All state transitions." },
+      { "name": "dur-fast", "value": "140ms", "purpose": "Hover and colour changes." },
+      { "name": "dur-draw", "value": "1100ms", "purpose": "Equity chart lines drawing in once per backtest run; verdict box draws after 700ms." }
+    ],
+    "breakpoints": [
+      { "name": "narrow", "value": "560px" },
+      { "name": "mobile", "value": "720px" },
+      { "name": "drawer-nav", "value": "960px" },
+      { "name": "single-column", "value": "1080px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Main action on a sheet; solid graphite, highlighter underline on hover.",
+      "html": "<button class=\"ds-btn-primary\">Run Backtest</button>",
+      "css": ".ds-btn-primary { min-height: 44px; padding: 0 20px; background: #1b221e; color: #e5eed8; border: 1.5px solid #1b221e; border-radius: 0; font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif; font-weight: 600; font-size: 16px; letter-spacing: 0.06em; text-transform: uppercase; cursor: pointer; transition: box-shadow 140ms cubic-bezier(0.16,1,0.3,1); } .ds-btn-primary:hover { box-shadow: inset 0 -4px 0 #f1df4f; } .ds-btn-primary:focus-visible { outline: 2px solid #1d4a94; outline-offset: 2px; }"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Outlined secondary action.",
+      "html": "<button class=\"ds-btn\">Import CSV</button>",
+      "css": ".ds-btn { min-height: 44px; padding: 0 20px; background: transparent; color: #1b221e; border: 1.5px solid #1b221e; border-radius: 0; font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif; font-weight: 600; font-size: 16px; letter-spacing: 0.06em; text-transform: uppercase; cursor: pointer; } .ds-btn:hover { background: #d8e4c8; } .ds-btn:focus-visible { outline: 2px solid #1d4a94; outline-offset: 2px; }"
+    },
+    {
+      "name": "Writing-line Field",
+      "kind": "input",
+      "refersTo": "field",
+      "description": "Label above a raised-paper input with a graphite underline.",
+      "html": "<label class=\"ds-field\"><span>DCA Amount (USD)</span><input value=\"500\" /></label>",
+      "css": ".ds-field { display: flex; flex-direction: column; gap: 4px; } .ds-field span { font-family: 'Barlow Condensed', sans-serif; font-weight: 600; font-size: 14px; letter-spacing: 0.08em; text-transform: uppercase; color: #435047; } .ds-field input { min-height: 44px; padding: 8px 12px; border: 0; border-bottom: 1.5px solid #1b221e; background: #eef4e5; color: #1b221e; font-size: 16px; border-radius: 0; } .ds-field input:focus-visible { outline: 2px solid #1d4a94; outline-offset: 0; }"
+    },
+    {
+      "name": "Segmented Filter",
+      "kind": "chip",
+      "description": "Outlined group; pressed segment solid graphite, counts in mono.",
+      "html": "<div class=\"ds-seg\"><button aria-pressed=\"true\">All Types <small>10</small></button><button aria-pressed=\"false\">Buy <small>5</small></button></div>",
+      "css": ".ds-seg { display: inline-flex; border: 1.5px solid #1b221e; } .ds-seg button { min-height: 44px; padding: 0 16px; background: transparent; border: 0; color: #1b221e; font-family: 'Barlow Condensed', sans-serif; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; cursor: pointer; } .ds-seg button + button { border-left: 1px solid #9fb391; } .ds-seg button:hover { background: #d8e4c8; } .ds-seg button[aria-pressed='true'] { background: #1b221e; color: #e5eed8; } .ds-seg small { font-family: 'Azeret Mono', monospace; font-size: 12px; opacity: 0.8; }"
+    },
+    {
+      "name": "Boxed Answer",
+      "kind": "custom",
+      "refersTo": "answer",
+      "description": "The one highlighted result per sheet.",
+      "html": "<span class=\"ds-answer\">$31,930.30</span>",
+      "css": ".ds-answer { display: inline-block; padding: 2px 6px 3px; border: 2px solid #1b221e; box-shadow: inset 0 -0.45em 0 #f1df4f; color: #1b221e; font-family: 'Azeret Mono', monospace; font-size: 36px; font-weight: 600; font-variant-numeric: tabular-nums; }"
+    },
+    {
+      "name": "Title Block",
+      "kind": "custom",
+      "description": "Ruled header of every sheet: subject cell with H1, sheet number cell.",
+      "html": "<header class=\"ds-tb\"><div><h1>Transactions</h1><p>My Portfolio</p></div><div><small>Sheet</small><b>02 / 04</b></div></header>",
+      "css": ".ds-tb { display: grid; grid-template-columns: 1fr auto; border: 1.5px solid #1b221e; } .ds-tb > div { padding: 12px 20px 16px; } .ds-tb > div + div { border-left: 1.5px solid #1b221e; display: flex; flex-direction: column; justify-content: space-between; } .ds-tb h1 { margin: 0; font-family: 'Barlow Condensed', sans-serif; font-weight: 600; font-size: 44px; line-height: 1; text-transform: uppercase; } .ds-tb p { margin: 8px 0 0; color: #435047; font-size: 14px; } .ds-tb small { font-family: 'Barlow Condensed', sans-serif; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: #56645a; } .ds-tb b { font-family: 'Azeret Mono', monospace; font-size: 22px; }"
+    },
+    {
+      "name": "Binding Strip Nav",
+      "kind": "nav",
+      "refersTo": "binding-strip",
+      "description": "Dark top strip; the active numbered tab takes the paper colour.",
+      "html": "<nav class=\"ds-bind\"><a class=\"on\"><small>01</small> Dashboard</a><a><small>02</small> Transactions</a></nav>",
+      "css": ".ds-bind { display: flex; min-height: 60px; background: #1c2a21; border-bottom: 3px solid #1b221e; padding: 0 24px; } .ds-bind a { display: inline-flex; align-items: center; gap: 8px; padding: 0 16px; color: #a9bb9d; font-family: 'Barlow Condensed', sans-serif; font-weight: 600; font-size: 17px; letter-spacing: 0.05em; text-transform: uppercase; text-decoration: none; cursor: pointer; } .ds-bind a:hover { color: #e5eed8; } .ds-bind a.on { background: #e5eed8; color: #1b221e; } .ds-bind small { font-family: 'Azeret Mono', monospace; font-size: 12px; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Computation Pad",
+    "overview": "Every screen is a sheet torn from an engineer's green-tint computation pad. The pad's printed 5 mm grid is the page ground, a dark glued binding strip carries navigation, and each sheet opens with a ruled title block that states its subject and sheet number. The working is shown in graphite; the answer is boxed and highlighted. This refuses both the dark neon trading terminal and the blue SaaS card grid the category usually ships. The dark scheme is the same pad after it has been to the print room: a blueprint, Prussian-blue ground with white linework and chalk-yellow for the second series and the answer.",
+    "keyCharacteristics": [
+      "Pale green paper with a faint 20 px / 100 px grid on body, never on individual panels.",
+      "Square corners everywhere; 1 to 2 px inked rules separate content instead of cards and shadows.",
+      "Condensed DIN-style caps for labels and headings, tabular mono for every figure, system sans for prose (covers Korean).",
+      "Highlighter yellow appears only on the answer: the key total, the backtest verdict, the active \"Live\" mode chip, the primary button's hover underline."
+    ],
+    "rules": [
+      { "name": "The Pencil Jobs Rule", "body": "Each pencil colour has one job. Gains stay graphite with a + sign; losses are red pencil with a - sign, so colour is never the only signal.", "section": "colors" },
+      { "name": "The One Highlight Rule", "body": "If more than one thing on a sheet is highlighted, none of them is the answer.", "section": "colors" },
+      { "name": "The Figures Are Mono Rule", "body": "Any number a user might compare down a column is set in the figure face with tabular numerals and right-aligned in tables (td.num).", "section": "typography" }
+    ],
+    "dos": [
+      "Do open every sheet with a title block and a literal sheet number.",
+      "Do box and highlight exactly one answer per sheet.",
+      "Do keep figures in the mono face with tabular numerals.",
+      "Do use red pencil only for losses, SELL, errors and destructive actions, always with a sign or label."
+    ],
+    "donts": [
+      "Don't add cards, rounded corners or drop shadows to separate content; use ruled lines.",
+      "Don't put a small tracked label above a heading.",
+      "Don't use emoji or unicode glyphs as icons; use lucide-vue-next.",
+      "Don't draw the grid inside panels; the page ground carries it."
+    ]
+  }
+}
