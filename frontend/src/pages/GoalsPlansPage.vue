@@ -214,6 +214,7 @@ import { useAuthStore } from '@/stores/authStore'
 import { usePortfolioStore } from '@/stores/portfolioStore'
 import { useGoalPlanStore } from '@/stores/goalPlanStore'
 import { useToast } from '@/composables/useToast'
+import { toDateInputValue } from '@/utils/dateInput'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -231,14 +232,14 @@ const goalForm = reactive({
   name: '',
   targetAmount: 10000,
   currentAmount: 0,
-  targetDate: new Date().toISOString().slice(0, 10)
+  targetDate: toDateInputValue()
 })
 
 const planForm = reactive({
   symbol: 'AAPL',
   amountPerInterval: 500,
   interval: 'MONTHLY' as 'WEEKLY' | 'MONTHLY',
-  startDate: new Date().toISOString().slice(0, 10),
+  startDate: toDateInputValue(),
   endDate: '',
   isActive: true
 })
@@ -280,7 +281,7 @@ function resetGoalForm() {
   goalForm.name = ''
   goalForm.targetAmount = 10000
   goalForm.currentAmount = 0
-  goalForm.targetDate = new Date().toISOString().slice(0, 10)
+  goalForm.targetDate = toDateInputValue()
   goalPlanStore.clearError()
 }
 
@@ -288,7 +289,7 @@ function resetPlanForm() {
   planForm.symbol = 'AAPL'
   planForm.amountPerInterval = 500
   planForm.interval = 'MONTHLY'
-  planForm.startDate = new Date().toISOString().slice(0, 10)
+  planForm.startDate = toDateInputValue()
   planForm.endDate = ''
   planForm.isActive = true
   goalPlanStore.clearError()

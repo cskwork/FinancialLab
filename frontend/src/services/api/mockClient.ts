@@ -44,6 +44,19 @@ async function getSortedCandles(symbol: string) {
   return await db.candles.where('symbol').equals(symbol).sortBy('date')
 }
 
+/**
+ * FIFO 원장 검증: 계산이 가능하면 null, 아니면 오류 메시지를 반환한다.
+ * 잘못된 원장이 저장되면 이후 holdings / analytics 계산이 계속 실패하므로 저장 전에 확인한다.
+ */
+function findLedgerError(transactions: Parameters<typeof calculateHoldingsFromTransactions>[0]): string | null {
+  try {
+    calculateHoldingsFromTransactions(transactions)
+    return null
+  } catch (holdingError) {
+    return holdingError instanceof Error ? holdingError.message : '매도 수량이 보유 수량을 초과합니다'
+  }
+}
+
 async function computeHoldingsData(portfolioId: number) {
   const transactions = await transactionRepository.findByPortfolioId(portfolioId)
 
@@ -546,6 +559,29 @@ export class MockApiClient {
     try {
       const validated = schemas.CreateTransactionRequestSchema.parse(request)
 
+      // 매도는 FIFO 기준 보유 수량 이내여야 한다. 초과 매도가 저장되면 이후 holdings 계산이 계속 실패한다.
+      if (validated.type === 'SELL') {
+        const existing = await transactionRepository.findByPortfolioId(validated.portfolioId)
+        const ledgerError = findLedgerError([
+          ...existing,
+          {
+            portfolioId: validated.portfolioId,
+            type: validated.type,
+            symbol: validated.symbol,
+            qty: validated.qty,
+            price: validated.price,
+            fee: validated.fee,
+            timestamp: new Date(validated.timestamp)
+          }
+        ])
+        if (ledgerError) {
+          return {
+            success: false,
+            error: { code: 'VALIDATION_ERROR', message: ledgerError }
+          }
+        }
+      }
+
       const transactionId = await transactionRepository.create({
         portfolioId: validated.portfolioId,
         type: validated.type,
@@ -611,6 +647,23 @@ export class MockApiClient {
    */
   async deleteTransaction(id: number): Promise<ApiResponse<void>> {
     try {
+      // 이후 매도가 의존하는 매수를 지우면 남은 원장의 holdings 계산이 실패한다. 연쇄 삭제 대신 거부한다.
+      // 이미 깨진 원장(검증 도입 전 데이터)은 복구를 위해 삭제를 막지 않는다.
+      const target = await transactionRepository.findById(id)
+      if (target) {
+        const ledger = await transactionRepository.findByPortfolioId(target.portfolioId)
+        const remainingError = findLedgerError(ledger.filter((t) => t.id !== id))
+        if (remainingError && !findLedgerError(ledger)) {
+          return {
+            success: false,
+            error: {
+              code: 'VALIDATION_ERROR',
+              message: `이 거래에 의존하는 이후 매도가 있어 삭제할 수 없습니다 (${remainingError})`
+            }
+          }
+        }
+      }
+
       await transactionRepository.delete(id)
 
       return {
