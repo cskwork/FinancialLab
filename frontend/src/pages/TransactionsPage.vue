@@ -232,6 +232,13 @@ import {
   filterToQuery,
   type TypeFilter
 } from '@/utils/transactionFilter'
+import { toDateTimeLocalValue } from '@/utils/dateInput'
+import {
+  importTransactions,
+  toImportRequests,
+  summarizeImport,
+  type InvalidCsvRow
+} from '@/utils/csvImport'
 
 const router = useRouter()
 const route = useRoute()
@@ -267,7 +274,7 @@ const formData = reactive<{
   qty: undefined,
   price: undefined,
   fee: 0,
-  timestamp: new Date().toISOString().slice(0, 16),
+  timestamp: toDateTimeLocalValue(),
   note: ''
 })
 
@@ -344,7 +351,12 @@ async function handleAddTransaction() {
 async function handleDelete(id: number) {
   if (confirm('Are you sure you want to delete this transaction?')) {
     const success = await transactionStore.deleteTransaction(id)
-    if (success && portfolioStore.currentPortfolio) {
+    if (!success) {
+      // 폼의 오류 줄은 입력 폼이 열려 있을 때만 보이므로 삭제 거부는 toast로 알린다
+      toast.error(transactionStore.error ?? 'Failed to delete transaction')
+      return
+    }
+    if (portfolioStore.currentPortfolio) {
       await analyticsStore.fetchAnalytics(portfolioStore.currentPortfolio.id)
     }
   }
@@ -376,32 +388,26 @@ async function handleCsvFile(event: Event) {
 
     if (message.data.type === 'success' && Array.isArray(message.data.data)) {
       const parsed = message.data.data as Array<Record<string, unknown>>
-      let created = 0
-      for (const row of parsed) {
-        const request: CreateTransactionRequest = {
-          portfolioId: portfolioStore.currentPortfolio!.id,
-          type: (row.type as CreateTransactionRequest['type']) ?? 'BUY',
-          symbol: (row.symbol as string | undefined) || undefined,
-          qty: typeof row.qty === 'number' ? row.qty : undefined,
-          price: typeof row.price === 'number' ? row.price : undefined,
-          fee: typeof row.fee === 'number' ? row.fee : 0,
-          timestamp:
-            typeof row.timestamp === 'string'
-              ? new Date(row.timestamp).toISOString()
-              : new Date().toISOString(),
-          note: (row.note as string | undefined) || undefined
-        }
-
-        const success = await transactionStore.createTransaction(request)
-        if (success) {
-          created += 1
-        }
-      }
+      const invalid = (Array.isArray(message.data.invalid) ? message.data.invalid : []) as InvalidCsvRow[]
+      // 최신순 CSV도 FIFO 매도 검증을 통과하도록 시간순으로 저장하고, 거부된 행은 따로 알린다
+      const { created, rejected } = await importTransactions(
+        toImportRequests(parsed, portfolioStore.currentPortfolio!.id),
+        async (request) =>
+          (await transactionStore.createTransaction(request))
+            ? null
+            : (transactionStore.error ?? 'Failed to create transaction')
+      )
 
       if (portfolioStore.currentPortfolio) {
         await analyticsStore.fetchAnalytics(portfolioStore.currentPortfolio.id)
       }
-      toast.success(`${created} transactions imported.`)
+      // 파싱 거부와 저장 거부를 함께 보여주고, 하나라도 있으면 성공으로 알리지 않는다
+      const summary = summarizeImport(created, invalid, rejected)
+      if (summary.complete) {
+        toast.success(summary.message)
+      } else {
+        toast.error(summary.message)
+      }
     }
 
     if (message.data.type === 'error') {
@@ -435,7 +441,7 @@ function resetForm() {
   formData.qty = undefined
   formData.price = undefined
   formData.fee = 0
-  formData.timestamp = new Date().toISOString().slice(0, 16)
+  formData.timestamp = toDateTimeLocalValue()
   formData.note = ''
   transactionStore.clearError()
 }
