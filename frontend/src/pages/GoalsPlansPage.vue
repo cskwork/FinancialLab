@@ -1,20 +1,20 @@
 <template>
   <div class="page goals-plans-page">
-    <TitleBlock title="Goals & Plans" sheet="03 / 04">
-      Track long-term objectives and automated DCA investment plans.
+    <TitleBlock :title="t('goals.title')" sheet="03 / 04">
+      {{ t('goals.subtitle') }}
     </TitleBlock>
 
     <EmptySheet v-if="!authStore.isAuthenticated">
-      로그인 후 목표와 계획을 관리할 수 있습니다.
+      {{ t('goals.pleaseLogin') }}
       <template #action>
-        <router-link to="/login" class="btn btn--primary">Login</router-link>
+        <router-link to="/login" class="btn btn--primary">{{ t('common.login') }}</router-link>
       </template>
     </EmptySheet>
 
     <EmptySheet v-else-if="!portfolioStore.currentPortfolio">
-      먼저 포트폴리오를 생성하거나 선택하세요.
+      {{ t('goals.noPortfolio') }}
       <template #action>
-        <router-link to="/dashboard" class="btn btn--primary">Go to Dashboard</router-link>
+        <router-link to="/dashboard" class="btn btn--primary">{{ t('common.goToDashboard') }}</router-link>
       </template>
     </EmptySheet>
 
@@ -22,8 +22,8 @@
       <section class="panel" aria-labelledby="goals-heading">
         <div class="block-head">
           <div>
-            <h2 id="goals-heading">Financial Goals</h2>
-            <p>Set measurable targets for your portfolio growth.</p>
+            <h2 id="goals-heading">{{ t('goals.goalsHeading') }}</h2>
+            <p>{{ t('goals.goalsBody') }}</p>
           </div>
           <button
             type="button"
@@ -33,42 +33,42 @@
             @click="toggleGoalForm"
           >
             <component :is="showGoalForm ? X : Plus" aria-hidden="true" />
-            {{ showGoalForm ? '취소' : 'Add Goal' }}
+            {{ showGoalForm ? t('common.cancel') : t('goals.addGoal') }}
           </button>
         </div>
 
         <form v-if="showGoalForm" id="goal-form" class="form-grid entry" @submit.prevent="handleCreateGoal">
           <div class="field span-2">
-            <label for="goal-name">Goal Name</label>
-            <input id="goal-name" v-model="goalForm.name" type="text" required placeholder="Retirement Fund" />
+            <label for="goal-name">{{ t('goals.goalName') }}</label>
+            <input id="goal-name" v-model="goalForm.name" type="text" required :placeholder="t('goals.goalNamePlaceholder')" />
           </div>
           <div class="field">
-            <label for="goal-target">Target Amount (USD)</label>
+            <label for="goal-target">{{ t('goals.targetAmountUsd') }}</label>
             <input id="goal-target" v-model.number="goalForm.targetAmount" type="number" min="1" step="100" required />
           </div>
           <div class="field">
-            <label for="goal-current">Current Amount</label>
+            <label for="goal-current">{{ t('goals.currentAmount') }}</label>
             <input id="goal-current" v-model.number="goalForm.currentAmount" type="number" min="0" step="100" />
           </div>
           <div class="field">
-            <label for="goal-date">Target Date</label>
+            <label for="goal-date">{{ t('goals.targetDate') }}</label>
             <input id="goal-date" v-model="goalForm.targetDate" type="date" required />
           </div>
           <div class="form-actions">
             <button type="submit" class="btn btn--primary" :disabled="goalPlanStore.isLoadingGoals">
-              {{ goalPlanStore.isLoadingGoals ? 'Saving...' : 'Save Goal' }}
+              {{ goalPlanStore.isLoadingGoals ? t('common.saving') : t('goals.saveGoal') }}
             </button>
-            <button type="button" class="btn btn--quiet" @click="resetGoalForm">Reset</button>
+            <button type="button" class="btn btn--quiet" @click="resetGoalForm">{{ t('common.reset') }}</button>
           </div>
         </form>
 
-        <LoadingSpinner v-if="goalPlanStore.isLoadingGoals" message="Loading goals..." />
+        <LoadingSpinner v-if="goalPlanStore.isLoadingGoals" :message="t('goals.loadingGoals')" />
         <ul v-else-if="goals.length > 0" class="item-list">
           <li v-for="goal in goals" :key="goal.id" class="item">
             <div class="item-main">
               <div class="item-title">
                 <h3>{{ goal.name }}</h3>
-                <span class="pct fig">{{ progressOf(goal.currentAmount, goal.targetAmount).toFixed(0) }}%</span>
+                <span class="pct fig">{{ formatNumber(progressOf(goal.currentAmount, goal.targetAmount), locale, 0) }}%</span>
               </div>
               <div
                 class="progress"
@@ -76,44 +76,44 @@
                 :aria-valuenow="Math.round(progressOf(goal.currentAmount, goal.targetAmount))"
                 aria-valuemin="0"
                 aria-valuemax="100"
-                :aria-label="`${goal.name} progress`"
+                :aria-label="t('goals.progressLabel', { name: goal.name })"
               >
                 <span class="progress-fill" :style="{ width: `${progressOf(goal.currentAmount, goal.targetAmount)}%` }"></span>
               </div>
               <dl class="item-meta">
                 <div>
-                  <dt>Current Amount</dt>
-                  <dd class="fig">${{ formatCurrency(goal.currentAmount) }}</dd>
+                  <dt>{{ t('goals.currentAmount') }}</dt>
+                  <dd class="fig">{{ formatUsd(goal.currentAmount, locale, 0) }}</dd>
                 </div>
                 <div>
-                  <dt>Target Amount</dt>
-                  <dd class="fig">${{ formatCurrency(goal.targetAmount) }}</dd>
+                  <dt>{{ t('goals.targetAmount') }}</dt>
+                  <dd class="fig">{{ formatUsd(goal.targetAmount, locale, 0) }}</dd>
                 </div>
                 <div>
-                  <dt>Target Date</dt>
-                  <dd class="fig">{{ formatDate(goal.targetDate) }}</dd>
+                  <dt>{{ t('goals.targetDate') }}</dt>
+                  <dd class="fig">{{ formatDate(goal.targetDate, locale) }}</dd>
                 </div>
               </dl>
             </div>
             <button
               class="icon-btn"
               type="button"
-              :aria-label="`Delete goal ${goal.name}`"
-              title="Delete"
+              :aria-label="t('goals.deleteGoal', { name: goal.name })"
+              :title="t('common.delete')"
               @click="handleDeleteGoal(goal.id)"
             >
               <Trash2 aria-hidden="true" />
             </button>
           </li>
         </ul>
-        <EmptySheet v-else compact>아직 등록된 목표가 없습니다.</EmptySheet>
+        <EmptySheet v-else compact>{{ t('goals.noGoals') }}</EmptySheet>
       </section>
 
       <section class="panel" aria-labelledby="plans-heading">
         <div class="block-head">
           <div>
-            <h2 id="plans-heading">Recurring Plans</h2>
-            <p>Automate dollar-cost averaging with recurring buy plans.</p>
+            <h2 id="plans-heading">{{ t('goals.plansHeading') }}</h2>
+            <p>{{ t('goals.plansBody') }}</p>
           </div>
           <button
             type="button"
@@ -123,65 +123,65 @@
             @click="togglePlanForm"
           >
             <component :is="showPlanForm ? X : Plus" aria-hidden="true" />
-            {{ showPlanForm ? '취소' : 'Add Plan' }}
+            {{ showPlanForm ? t('common.cancel') : t('goals.addPlan') }}
           </button>
         </div>
 
         <form v-if="showPlanForm" id="plan-form" class="form-grid entry" @submit.prevent="handleCreatePlan">
           <div class="field">
-            <label for="plan-symbol">Symbol</label>
+            <label for="plan-symbol">{{ t('goals.symbol') }}</label>
             <input id="plan-symbol" v-model="planForm.symbol" type="text" required placeholder="AAPL" />
           </div>
           <div class="field">
-            <label for="plan-amount">Amount per Interval (USD)</label>
+            <label for="plan-amount">{{ t('goals.amountPerIntervalUsd') }}</label>
             <input id="plan-amount" v-model.number="planForm.amountPerInterval" type="number" min="1" step="10" required />
           </div>
           <div class="field">
-            <label for="plan-interval">Interval</label>
+            <label for="plan-interval">{{ t('goals.interval') }}</label>
             <select id="plan-interval" v-model="planForm.interval" required>
-              <option value="WEEKLY">Weekly</option>
-              <option value="MONTHLY">Monthly</option>
+              <option value="WEEKLY">{{ t('goals.weekly') }}</option>
+              <option value="MONTHLY">{{ t('goals.monthly') }}</option>
             </select>
           </div>
           <div class="field">
-            <label for="plan-start">Start Date</label>
+            <label for="plan-start">{{ t('goals.startDate') }}</label>
             <input id="plan-start" v-model="planForm.startDate" type="date" required />
           </div>
           <div class="field">
-            <label for="plan-end">End Date (Optional)</label>
+            <label for="plan-end">{{ t('goals.endDateOptional') }}</label>
             <input id="plan-end" v-model="planForm.endDate" type="date" />
           </div>
           <label class="field field--check">
             <input v-model="planForm.isActive" type="checkbox" />
-            Active
+            {{ t('goals.activeCheckbox') }}
           </label>
           <div class="form-actions">
             <button type="submit" class="btn btn--primary" :disabled="goalPlanStore.isLoadingPlans">
-              {{ goalPlanStore.isLoadingPlans ? 'Saving...' : 'Save Plan' }}
+              {{ goalPlanStore.isLoadingPlans ? t('common.saving') : t('goals.savePlan') }}
             </button>
-            <button type="button" class="btn btn--quiet" @click="resetPlanForm">Reset</button>
+            <button type="button" class="btn btn--quiet" @click="resetPlanForm">{{ t('common.reset') }}</button>
           </div>
         </form>
 
-        <LoadingSpinner v-if="goalPlanStore.isLoadingPlans" message="Loading plans..." />
+        <LoadingSpinner v-if="goalPlanStore.isLoadingPlans" :message="t('goals.loadingPlans')" />
         <ul v-else-if="plans.length > 0" class="item-list">
           <li v-for="plan in plans" :key="plan.id" class="item">
             <div class="item-main">
               <div class="item-title">
                 <h3>{{ plan.symbol }}</h3>
-                <span class="status" :class="{ paused: !plan.isActive }">{{ plan.isActive ? 'Active' : 'Paused' }}</span>
+                <span class="status" :class="{ paused: !plan.isActive }">{{ plan.isActive ? t('goals.active') : t('goals.paused') }}</span>
               </div>
               <dl class="item-meta">
                 <div>
-                  <dt>Amount</dt>
-                  <dd class="fig">${{ formatCurrency(plan.amountPerInterval) }}</dd>
+                  <dt>{{ t('goals.amount') }}</dt>
+                  <dd class="fig">{{ formatUsd(plan.amountPerInterval, locale, 0) }}</dd>
                 </div>
                 <div>
-                  <dt>Interval</dt>
-                  <dd>{{ plan.interval }}</dd>
+                  <dt>{{ t('goals.interval') }}</dt>
+                  <dd>{{ intervalLabel(plan.interval) }}</dd>
                 </div>
                 <div>
-                  <dt>Duration</dt>
+                  <dt>{{ t('goals.duration') }}</dt>
                   <dd class="fig">{{ formatPlanDuration(plan.startDate, plan.endDate) }}</dd>
                 </div>
               </dl>
@@ -189,15 +189,15 @@
             <button
               class="icon-btn"
               type="button"
-              :aria-label="`Delete plan ${plan.symbol}`"
-              title="Delete"
+              :aria-label="t('goals.deletePlan', { symbol: plan.symbol })"
+              :title="t('common.delete')"
               @click="handleDeletePlan(plan.id)"
             >
               <Trash2 aria-hidden="true" />
             </button>
           </li>
         </ul>
-        <EmptySheet v-else compact>등록된 투자 계획이 없습니다.</EmptySheet>
+        <EmptySheet v-else compact>{{ t('goals.noPlans') }}</EmptySheet>
       </section>
     </div>
   </div>
@@ -206,6 +206,7 @@
 <script setup lang="ts">
 import { reactive, computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { Plus, X, Trash2 } from 'lucide-vue-next'
 import TitleBlock from '@/components/pad/TitleBlock.vue'
 import EmptySheet from '@/components/pad/EmptySheet.vue'
@@ -215,8 +216,11 @@ import { usePortfolioStore } from '@/stores/portfolioStore'
 import { useGoalPlanStore } from '@/stores/goalPlanStore'
 import { useToast } from '@/composables/useToast'
 import { toDateInputValue } from '@/utils/dateInput'
+import { formatDate, formatNumber, formatUsd } from '@/utils/localeFormat'
+import { failureMessage } from '@/utils/localizedMessages'
 
 const router = useRouter()
+const { t, locale } = useI18n()
 const authStore = useAuthStore()
 const portfolioStore = usePortfolioStore()
 const goalPlanStore = useGoalPlanStore()
@@ -227,6 +231,12 @@ const showPlanForm = ref(false)
 
 const goals = computed(() => goalPlanStore.goals)
 const plans = computed(() => goalPlanStore.plans)
+
+function intervalLabel(interval: string): string {
+  if (interval === 'WEEKLY') return t('goals.weekly')
+  if (interval === 'MONTHLY') return t('goals.monthly')
+  return interval
+}
 
 const goalForm = reactive({
   name: '',
@@ -267,6 +277,9 @@ async function loadData() {
     goalPlanStore.fetchGoals(portfolioId),
     goalPlanStore.fetchPlans(portfolioId)
   ])
+  if (goalPlanStore.error) {
+    toast.error(failureMessage('goals.loadFailed', goalPlanStore.error))
+  }
 }
 
 function toggleGoalForm() {
@@ -306,21 +319,21 @@ async function handleCreateGoal() {
   })
 
   if (success) {
-    toast.success('목표를 저장했습니다.')
+    toast.success(t('goals.goalSaved'))
     resetGoalForm()
     showGoalForm.value = false
-  } else if (goalPlanStore.error) {
-    toast.error(goalPlanStore.error)
+  } else {
+    toast.error(failureMessage('goals.goalSaveFailed', goalPlanStore.error))
   }
 }
 
 async function handleDeleteGoal(goalId: number) {
-  if (!confirm('해당 목표를 삭제하시겠습니까?')) return
+  if (!confirm(t('goals.confirmDeleteGoal'))) return
   const success = await goalPlanStore.deleteGoal(goalId)
   if (success) {
-    toast.warning('목표를 삭제했습니다.')
-  } else if (goalPlanStore.error) {
-    toast.error(goalPlanStore.error)
+    toast.warning(t('goals.goalDeleted'))
+  } else {
+    toast.error(failureMessage('goals.goalDeleteFailed', goalPlanStore.error))
   }
 }
 
@@ -337,21 +350,21 @@ async function handleCreatePlan() {
   })
 
   if (success) {
-    toast.success('투자 계획을 저장했습니다.')
+    toast.success(t('goals.planSaved'))
     resetPlanForm()
     showPlanForm.value = false
-  } else if (goalPlanStore.error) {
-    toast.error(goalPlanStore.error)
+  } else {
+    toast.error(failureMessage('goals.planSaveFailed', goalPlanStore.error))
   }
 }
 
 async function handleDeletePlan(planId: number) {
-  if (!confirm('해당 투자 계획을 삭제하시겠습니까?')) return
+  if (!confirm(t('goals.confirmDeletePlan'))) return
   const success = await goalPlanStore.deletePlan(planId)
   if (success) {
-    toast.warning('투자 계획을 삭제했습니다.')
-  } else if (goalPlanStore.error) {
-    toast.error(goalPlanStore.error)
+    toast.warning(t('goals.planDeleted'))
+  } else {
+    toast.error(failureMessage('goals.planDeleteFailed', goalPlanStore.error))
   }
 }
 
@@ -361,19 +374,9 @@ function progressOf(current: number, target: number) {
   return Math.min(100, Math.max(0, (current / target) * 100))
 }
 
-function formatCurrency(value: number) {
-  return value.toLocaleString('en-US', { maximumFractionDigits: 0 })
-}
-
-function formatDate(date: string) {
-  return new Date(date).toLocaleDateString()
-}
-
 function formatPlanDuration(start: string, end?: string) {
-  if (!end) {
-    return `${formatDate(start)} → ongoing`
-  }
-  return `${formatDate(start)} → ${formatDate(end)}`
+  const from = formatDate(start, locale.value)
+  return `${from} → ${end ? formatDate(end, locale.value) : t('goals.ongoing')}`
 }
 
 onMounted(() => {

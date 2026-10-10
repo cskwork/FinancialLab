@@ -1,9 +1,12 @@
 <template>
   <div class="login-page">
-    <router-link to="/" class="back-link">
-      <ArrowLeft aria-hidden="true" />
-      FinLab
-    </router-link>
+    <div class="login-top">
+      <router-link to="/" class="back-link" :aria-label="t('login.backHome')">
+        <ArrowLeft aria-hidden="true" />
+        FinLab
+      </router-link>
+      <LocaleSelect id="login-language" compact />
+    </div>
 
     <div class="login-sheet">
       <header class="login-header">
@@ -38,7 +41,7 @@
         </button>
 
         <p v-if="authStore.error" id="login-error" class="error-message" role="alert">
-          {{ authStore.error }}
+          {{ localizeError(authStore.error) }}
         </p>
 
         <p id="login-hint" class="hint">
@@ -59,6 +62,8 @@ import { useRouter, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { ArrowLeft, LogIn } from 'lucide-vue-next'
 import { useAuthStore } from '@/stores/authStore'
+import { localizeError } from '@/utils/localizedMessages'
+import LocaleSelect from '@/components/common/LocaleSelect.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -107,13 +112,20 @@ onMounted(() => {
   padding: var(--space-8) var(--space-4);
 }
 
+.login-top {
+  width: min(420px, 100%);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
 .back-link {
-  align-self: center;
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
   min-height: 44px;
-  width: min(420px, 100%);
   color: var(--ink);
   font-weight: 600;
   text-decoration: none;

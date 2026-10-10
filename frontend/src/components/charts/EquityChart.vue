@@ -8,15 +8,15 @@
     <div class="readout" aria-live="polite">
       <span class="ro-date fig">{{ active ? formatDay(active.date) : '' }}</span>
       <span class="ro-item">
-        <i class="key key-dca" aria-hidden="true"></i>{{ labels.dca }}
+        <i class="key key-dca" aria-hidden="true"></i>{{ seriesLabels.dca }}
         <strong class="fig">{{ active ? money(active.dcaValue) : '--' }}</strong>
       </span>
       <span class="ro-item">
-        <i class="key key-lump" aria-hidden="true"></i>{{ labels.lump }}
+        <i class="key key-lump" aria-hidden="true"></i>{{ seriesLabels.lump }}
         <strong class="fig">{{ active ? money(active.lumpValue) : '--' }}</strong>
       </span>
       <span class="ro-item ro-invested">
-        <i class="key key-invested" aria-hidden="true"></i>{{ labels.invested }}
+        <i class="key key-invested" aria-hidden="true"></i>{{ seriesLabels.invested }}
         <strong class="fig">{{ active ? money(active.dcaInvested) : '--' }}</strong>
       </span>
     </div>
@@ -71,7 +71,9 @@
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import type { EquityPoint } from '@/utils/equityCurve'
+import { formatCompactUsd, formatSessionDay, formatSessionMonth, formatUsd } from '@/utils/localeFormat'
 
 const props = withDefaults(
   defineProps<{
@@ -80,9 +82,16 @@ const props = withDefaults(
     caption?: string
   }>(),
   {
-    labels: () => ({ dca: 'DCA', lump: 'Lump Sum', invested: 'DCA invested' }),
+    labels: undefined,
     caption: ''
   }
+)
+
+const { t, locale } = useI18n()
+
+// 범례·읽기 영역·스크린 리더 요약이 같은 이름을 쓰도록 기본 라벨도 현재 언어로
+const seriesLabels = computed(
+  () => props.labels ?? { dca: t('backtest.chartDca'), lump: t('backtest.chartLump'), invested: t('backtest.chartInvested') }
 )
 
 const boxRef = ref<HTMLDivElement | null>(null)
@@ -148,7 +157,7 @@ const xTicks = computed(() => {
   props.points.forEach((p, i) => {
     const month = p.date.slice(0, 7)
     if (month !== lastMonth) {
-      ticks.push({ i, label: new Date(`${p.date}T00:00:00Z`).toLocaleDateString('en-US', { month: 'short', timeZone: 'UTC' }) })
+      ticks.push({ i, label: formatSessionMonth(p.date, locale.value) })
       lastMonth = month
     }
   })
@@ -160,7 +169,12 @@ const active = computed(() => props.points[activeIndex.value] ?? null)
 const summary = computed(() => {
   const last = props.points.at(-1)
   if (!last) return ''
-  return `${props.labels.dca} ends at ${money(last.dcaValue)}; ${props.labels.lump} ends at ${money(last.lumpValue)}. Use left and right arrow keys to read each session.`
+  return t('chart.summary', {
+    dca: seriesLabels.value.dca,
+    dcaValue: money(last.dcaValue),
+    lump: seriesLabels.value.lump,
+    lumpValue: money(last.lumpValue)
+  })
 })
 
 function onPointer(event: PointerEvent) {
@@ -199,20 +213,15 @@ function niceTicks(lo: number, hi: number, count: number) {
 }
 
 function money(v: number) {
-  return `$${v.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+  return formatUsd(v, locale.value)
 }
 
 function compactMoney(v: number) {
-  return `$${v.toLocaleString('en-US', { notation: 'compact', maximumFractionDigits: 1 })}`
+  return formatCompactUsd(v, locale.value)
 }
 
 function formatDay(date: string) {
-  return new Date(`${date}T00:00:00Z`).toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-    timeZone: 'UTC'
-  })
+  return formatSessionDay(date, locale.value)
 }
 
 watch(

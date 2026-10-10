@@ -1,6 +1,6 @@
 <template>
   <div class="page transactions-page">
-    <TitleBlock title="Transactions" sheet="02 / 04">
+    <TitleBlock :title="t('transactions.title')" sheet="02 / 04">
       <template v-if="portfolioStore.currentPortfolio" #default>{{ portfolioStore.currentPortfolio.name }}</template>
       <template #actions>
         <button
@@ -12,11 +12,11 @@
           @click="showAddForm = !showAddForm"
         >
           <component :is="showAddForm ? X : Plus" aria-hidden="true" />
-          {{ showAddForm ? 'Cancel' : 'Add Transaction' }}
+          {{ showAddForm ? t('common.cancel') : t('transactions.addTransaction') }}
         </button>
         <button type="button" class="btn" :disabled="isImporting" @click="triggerCsvImport">
           <Upload aria-hidden="true" />
-          {{ isImporting ? `Importing ${importProgress}%` : 'Import CSV' }}
+          {{ isImporting ? t('transactions.importing', { progress: importProgress }) : t('transactions.importCsv') }}
         </button>
         <input
           ref="fileInputRef"
@@ -30,19 +30,19 @@
       </template>
     </TitleBlock>
 
-    <LoadingSpinner v-if="isLoading" fullscreen message="Loading transactions..." />
+    <LoadingSpinner v-if="isLoading" fullscreen :message="t('transactions.loading')" />
 
     <EmptySheet v-else-if="!authStore.isAuthenticated">
-      Please login to view transactions
+      {{ t('transactions.pleaseLogin') }}
       <template #action>
-        <router-link to="/login" class="btn btn--primary">Go to Login</router-link>
+        <router-link to="/login" class="btn btn--primary">{{ t('common.goToLogin') }}</router-link>
       </template>
     </EmptySheet>
 
     <EmptySheet v-else-if="!portfolioStore.currentPortfolio">
-      No portfolio selected. Go to dashboard to create one.
+      {{ t('transactions.noPortfolio') }}
       <template #action>
-        <router-link to="/dashboard" class="btn btn--primary">Go to Dashboard</router-link>
+        <router-link to="/dashboard" class="btn btn--primary">{{ t('common.goToDashboard') }}</router-link>
       </template>
     </EmptySheet>
 
@@ -50,53 +50,50 @@
       <!-- New entry: the ledger's next blank line -->
       <section v-if="showAddForm" id="tx-entry" class="block entry" aria-labelledby="entry-heading">
         <div class="block-head">
-          <h2 id="entry-heading">Add New Transaction</h2>
-          <p>Fields marked * are required.</p>
+          <h2 id="entry-heading">{{ t('transactions.newHeading') }}</h2>
+          <p>{{ t('transactions.requiredHint') }}</p>
         </div>
         <form class="entry-line" @submit.prevent="handleAddTransaction">
           <div class="field f-date">
-            <label for="timestamp">Date &amp; Time *</label>
+            <label for="timestamp">{{ t('transactions.dateTime') }}</label>
             <input id="timestamp" v-model="formData.timestamp" type="datetime-local" required />
           </div>
           <div class="field f-type">
-            <label for="type">Type *</label>
+            <label for="type">{{ t('transactions.typeRequired') }}</label>
             <select id="type" v-model="formData.type" required>
-              <option value="BUY">BUY</option>
-              <option value="SELL">SELL</option>
-              <option value="DEPOSIT">DEPOSIT</option>
-              <option value="WITHDRAW">WITHDRAW</option>
+              <option v-for="type in TRANSACTION_TYPES" :key="type" :value="type">{{ transactionTypeLabel(type) }}</option>
             </select>
           </div>
           <template v-if="formData.type === 'BUY' || formData.type === 'SELL'">
             <div class="field f-symbol">
-              <label for="symbol">Symbol *</label>
+              <label for="symbol">{{ t('transactions.symbolRequired') }}</label>
               <input id="symbol" v-model="formData.symbol" type="text" placeholder="AAPL" autocapitalize="characters" required />
             </div>
             <div class="field f-num">
-              <label for="qty">Quantity *</label>
+              <label for="qty">{{ t('transactions.quantityRequired') }}</label>
               <input id="qty" v-model.number="formData.qty" type="number" step="0.01" min="0" placeholder="10" required />
             </div>
             <div class="field f-num">
-              <label for="price">Price *</label>
+              <label for="price">{{ t('transactions.priceRequired') }}</label>
               <input id="price" v-model.number="formData.price" type="number" step="0.01" min="0" placeholder="150.00" required />
             </div>
           </template>
           <div class="field f-num">
-            <label for="fee">Fee</label>
+            <label for="fee">{{ t('transactions.colFee') }}</label>
             <input id="fee" v-model.number="formData.fee" type="number" step="0.01" min="0" placeholder="0.00" />
           </div>
           <div class="field f-note">
-            <label for="note">Note</label>
-            <input id="note" v-model="formData.note" type="text" placeholder="Optional notes..." />
+            <label for="note">{{ t('transactions.colNote') }}</label>
+            <input id="note" v-model="formData.note" type="text" :placeholder="t('transactions.notePlaceholder')" />
           </div>
           <div class="entry-actions">
             <button type="submit" class="btn btn--primary" :disabled="transactionStore.isLoading">
-              {{ transactionStore.isLoading ? 'Adding...' : 'Add Transaction' }}
+              {{ transactionStore.isLoading ? t('transactions.adding') : t('transactions.addTransaction') }}
             </button>
-            <button type="button" class="btn btn--quiet" @click="resetForm">Reset</button>
+            <button type="button" class="btn btn--quiet" @click="resetForm">{{ t('common.reset') }}</button>
           </div>
-          <p v-if="transactionStore.error" class="error-message" role="alert">
-            {{ transactionStore.error }}
+          <p v-if="createError" class="error-message" role="alert">
+            {{ createError }}
           </p>
         </form>
       </section>
@@ -104,23 +101,23 @@
       <!-- Ledger -->
       <section class="block" aria-labelledby="ledger-heading">
         <div class="block-head">
-          <h2 id="ledger-heading">All Transactions ({{ transactionStore.transactions.length }})</h2>
+          <h2 id="ledger-heading">{{ t('transactions.allTransactions', { count: transactionStore.transactions.length }) }}</h2>
         </div>
 
         <div class="filter-bar">
           <div class="search">
             <Search class="search-icon" aria-hidden="true" />
-            <label for="tx-search" class="sr-only">Search symbol or note</label>
+            <label for="tx-search" class="sr-only">{{ t('transactions.searchLabel') }}</label>
             <input
               id="tx-search"
               v-model="searchQuery"
               class="input"
               type="search"
-              placeholder="Search symbol or note"
+              :placeholder="t('transactions.searchLabel')"
               autocomplete="off"
             />
           </div>
-          <div class="type-seg" role="group" aria-label="Filter by type">
+          <div class="type-seg" role="group" :aria-label="t('transactions.filterByType')">
             <button
               v-for="option in typeOptions"
               :key="option"
@@ -129,32 +126,34 @@
               :aria-pressed="filterType === option"
               @click="filterType = option"
             >
-              {{ option === 'ALL' ? 'All Types' : option }}
+              {{ option === 'ALL' ? t('transactions.allTypes') : transactionTypeLabel(option) }}
               <span class="seg-count fig">{{ typeCounts[option] }}</span>
             </button>
           </div>
         </div>
 
         <p v-if="isFiltered" class="filter-status" aria-live="polite">
-          Showing <span class="fig">{{ filteredTransactions.length }}</span> of
-          <span class="fig">{{ transactionStore.transactions.length }}</span>
-          <button type="button" class="btn btn--quiet btn--sm" @click="clearFilters">Clear filters</button>
+          <i18n-t scope="global" keypath="transactions.showing" tag="span">
+            <template #shown><span class="fig">{{ filteredTransactions.length }}</span></template>
+            <template #total><span class="fig">{{ transactionStore.transactions.length }}</span></template>
+          </i18n-t>
+          <button type="button" class="btn btn--quiet btn--sm" @click="clearFilters">{{ t('transactions.clearFilters') }}</button>
         </p>
 
         <EmptySheet v-if="transactionStore.transactions.length === 0">
-          No transactions found. Add your first transaction above!
+          {{ t('transactions.empty') }}
           <template #action>
             <button type="button" class="btn btn--primary" @click="showAddForm = true">
               <Plus aria-hidden="true" />
-              Add Transaction
+              {{ t('transactions.addTransaction') }}
             </button>
           </template>
         </EmptySheet>
 
         <EmptySheet v-else-if="filteredTransactions.length === 0" compact>
-          No transactions match these filters.
+          {{ t('transactions.noMatch') }}
           <template #action>
-            <button type="button" class="btn btn--sm" @click="clearFilters">Clear filters</button>
+            <button type="button" class="btn btn--sm" @click="clearFilters">{{ t('transactions.clearFilters') }}</button>
           </template>
         </EmptySheet>
 
@@ -162,31 +161,31 @@
           <table class="transactions-table">
             <thead>
               <tr>
-                <th scope="col">Date</th>
-                <th scope="col">Type</th>
-                <th scope="col">Symbol</th>
-                <th scope="col" class="num">Quantity</th>
-                <th scope="col" class="num">Price</th>
-                <th scope="col" class="num">Fee</th>
-                <th scope="col" class="num">Total</th>
-                <th scope="col">Note</th>
-                <th scope="col"><span class="sr-only">Actions</span></th>
+                <th scope="col">{{ t('transactions.colDate') }}</th>
+                <th scope="col">{{ t('transactions.colType') }}</th>
+                <th scope="col">{{ t('transactions.colSymbol') }}</th>
+                <th scope="col" class="num">{{ t('transactions.colQuantity') }}</th>
+                <th scope="col" class="num">{{ t('transactions.colPrice') }}</th>
+                <th scope="col" class="num">{{ t('transactions.colFee') }}</th>
+                <th scope="col" class="num">{{ t('transactions.colTotal') }}</th>
+                <th scope="col">{{ t('transactions.colNote') }}</th>
+                <th scope="col"><span class="sr-only">{{ t('transactions.colActions') }}</span></th>
               </tr>
             </thead>
             <tbody>
               <tr v-for="tx in filteredTransactions" :key="tx.id">
-                <td class="tx-date fig">{{ formatDate(tx.timestamp) }}</td>
+                <td class="tx-date fig">{{ formatDateTime(tx.timestamp, locale) }}</td>
                 <td>
-                  <span class="tx-type" :class="`type-${tx.type.toLowerCase()}`">{{ tx.type }}</span>
+                  <span class="tx-type" :class="`type-${tx.type.toLowerCase()}`">{{ transactionTypeLabel(tx.type) }}</span>
                 </td>
                 <td class="tx-symbol">{{ tx.symbol || '-' }}</td>
-                <td class="num">{{ tx.qty !== undefined ? tx.qty.toFixed(2) : '-' }}</td>
-                <td class="num">{{ tx.price !== undefined ? `$${tx.price.toFixed(2)}` : '-' }}</td>
-                <td class="num">${{ tx.fee.toFixed(2) }}</td>
+                <td class="num">{{ tx.qty !== undefined ? formatNumber(tx.qty, locale) : '-' }}</td>
+                <td class="num">{{ tx.price !== undefined ? formatUsd(tx.price, locale) : '-' }}</td>
+                <td class="num">{{ formatUsd(tx.fee, locale) }}</td>
                 <td class="num">
                   {{
                     tx.qty !== undefined && tx.price !== undefined
-                      ? `$${(tx.qty * tx.price + tx.fee).toFixed(2)}`
+                      ? formatUsd(tx.qty * tx.price + tx.fee, locale)
                       : '-'
                   }}
                 </td>
@@ -195,8 +194,14 @@
                   <button
                     type="button"
                     class="icon-btn"
-                    :aria-label="`Delete ${tx.type} ${tx.symbol ?? ''} ${formatDate(tx.timestamp)}`"
-                    title="Delete"
+                    :aria-label="
+                      t('transactions.deleteLabel', {
+                        type: transactionTypeLabel(tx.type),
+                        symbol: tx.symbol ?? '',
+                        date: formatDateTime(tx.timestamp, locale)
+                      })
+                    "
+                    :title="t('common.delete')"
                     @click="handleDelete(tx.id)"
                   >
                     <Trash2 aria-hidden="true" />
@@ -214,6 +219,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, reactive, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { Plus, X, Upload, Search, Trash2 } from 'lucide-vue-next'
 import { useAuthStore } from '@/stores/authStore'
 import { usePortfolioStore } from '@/stores/portfolioStore'
@@ -233,15 +239,13 @@ import {
   type TypeFilter
 } from '@/utils/transactionFilter'
 import { toDateTimeLocalValue } from '@/utils/dateInput'
-import {
-  importTransactions,
-  toImportRequests,
-  summarizeImport,
-  type InvalidCsvRow
-} from '@/utils/csvImport'
+import { importTransactions, toImportRequests, type InvalidCsvRow } from '@/utils/csvImport'
+import { formatDateTime, formatNumber, formatUsd } from '@/utils/localeFormat'
+import { failureMessage, summarizeImportLocalized, transactionTypeLabel } from '@/utils/localizedMessages'
 
 const router = useRouter()
 const route = useRoute()
+const { t, locale } = useI18n()
 const authStore = useAuthStore()
 const portfolioStore = usePortfolioStore()
 const transactionStore = useTransactionStore()
@@ -258,6 +262,11 @@ const typeOptions: TypeFilter[] = ['ALL', ...TRANSACTION_TYPES]
 const isImporting = ref(false)
 const importProgress = ref(0)
 const fileInputRef = ref<HTMLInputElement | null>(null)
+
+// 스토어 오류 원문은 그대로 두고 표시할 때 현재 언어 제목과 함께 보여준다
+const createError = computed(() =>
+  transactionStore.error ? failureMessage('transactions.createFailed', transactionStore.error) : ''
+)
 
 // 폼 데이터
 const formData = reactive<{
@@ -312,9 +321,13 @@ async function loadData() {
     isLoading.value = true
     try {
       await transactionStore.fetchTransactions(portfolioStore.currentPortfolio.id)
+      if (transactionStore.error) {
+        toast.error(failureMessage('transactions.loadFailed', transactionStore.error))
+      }
       await analyticsStore.fetchAnalytics(portfolioStore.currentPortfolio.id)
     } catch (error) {
       console.error('Failed to load transactions:', error)
+      toast.error(failureMessage('transactions.loadFailed', error instanceof Error ? error.message : null))
     } finally {
       isLoading.value = false
     }
@@ -349,11 +362,12 @@ async function handleAddTransaction() {
 
 // 거래 삭제
 async function handleDelete(id: number) {
-  if (confirm('Are you sure you want to delete this transaction?')) {
+  if (confirm(t('transactions.confirmDelete'))) {
     const success = await transactionStore.deleteTransaction(id)
     if (!success) {
       // 폼의 오류 줄은 입력 폼이 열려 있을 때만 보이므로 삭제 거부는 toast로 알린다
-      toast.error(transactionStore.error ?? 'Failed to delete transaction')
+      toast.error(failureMessage('transactions.deleteFailed', transactionStore.error))
+      transactionStore.clearError()
       return
     }
     if (portfolioStore.currentPortfolio) {
@@ -395,14 +409,14 @@ async function handleCsvFile(event: Event) {
         async (request) =>
           (await transactionStore.createTransaction(request))
             ? null
-            : (transactionStore.error ?? 'Failed to create transaction')
+            : (transactionStore.error ?? t('transactions.createFailed'))
       )
 
       if (portfolioStore.currentPortfolio) {
         await analyticsStore.fetchAnalytics(portfolioStore.currentPortfolio.id)
       }
       // 파싱 거부와 저장 거부를 함께 보여주고, 하나라도 있으면 성공으로 알리지 않는다
-      const summary = summarizeImport(created, invalid, rejected)
+      const summary = summarizeImportLocalized(created, invalid, rejected)
       if (summary.complete) {
         toast.success(summary.message)
       } else {
@@ -411,14 +425,14 @@ async function handleCsvFile(event: Event) {
     }
 
     if (message.data.type === 'error') {
-      toast.error(message.data.error ?? 'CSV import failed')
+      toast.error(failureMessage('transactions.importFailed', message.data.error))
     }
 
     cleanupWorker(worker)
   }
 
   worker.onerror = (error) => {
-    toast.error(error.message)
+    toast.error(failureMessage('transactions.importFailed', error.message))
     cleanupWorker(worker)
   }
 
@@ -444,18 +458,6 @@ function resetForm() {
   formData.timestamp = toDateTimeLocalValue()
   formData.note = ''
   transactionStore.clearError()
-}
-
-// 날짜 포맷
-function formatDate(dateStr: string): string {
-  const date = new Date(dateStr)
-  return date.toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  })
 }
 
 // 초기 로드

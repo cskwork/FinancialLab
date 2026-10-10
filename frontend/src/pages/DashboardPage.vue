@@ -79,7 +79,7 @@
             <div class="total">
               <span class="label">{{ t('dashboard.totalValue') }}</span>
               <span class="total-value fig">
-                <span class="answer">{{ portfolioMetrics ? `$${formatCurrency(portfolioMetrics.totalValue)}` : '--' }}</span>
+                <span class="answer">{{ portfolioMetrics ? formatUsd(portfolioMetrics.totalValue, locale) : '--' }}</span>
               </span>
             </div>
             <dl class="calc">
@@ -89,20 +89,16 @@
                   class="fig"
                   :class="{ positive: (portfolioMetrics?.pnlDaily ?? 0) > 0, negative: (portfolioMetrics?.pnlDaily ?? 0) < 0 }"
                 >
-                  {{
-                    portfolioMetrics
-                      ? `${portfolioMetrics.pnlDaily >= 0 ? '+' : '-'}$${formatCurrency(Math.abs(portfolioMetrics.pnlDaily))}`
-                      : '--'
-                  }}
+                  {{ portfolioMetrics ? formatSignedUsd(portfolioMetrics.pnlDaily, locale) : '--' }}
                 </dd>
               </div>
               <div class="calc-row">
                 <dt>{{ t('dashboard.sharpeRatio') }}</dt>
-                <dd class="fig">{{ portfolioMetrics ? portfolioMetrics.sharpe.toFixed(2) : '--' }}</dd>
+                <dd class="fig">{{ portfolioMetrics ? formatNumber(portfolioMetrics.sharpe, locale) : '--' }}</dd>
               </div>
               <div class="calc-row">
                 <dt>{{ t('dashboard.volatility') }}</dt>
-                <dd class="fig">{{ portfolioMetrics ? `${portfolioMetrics.volatility.toFixed(2)}%` : '--' }}</dd>
+                <dd class="fig">{{ portfolioMetrics ? `${formatNumber(portfolioMetrics.volatility, locale)}%` : '--' }}</dd>
               </div>
               <div class="calc-row">
                 <dt>{{ t('dashboard.totalHoldings') }}</dt>
@@ -148,19 +144,19 @@
                 <tbody>
                   <tr v-for="holding in holdings" :key="holding.symbol">
                     <th scope="row" class="symbol">{{ holding.symbol }}</th>
-                    <td class="num">{{ holding.shares.toFixed(2) }}</td>
-                    <td class="num">${{ holding.avgCost.toFixed(2) }}</td>
-                    <td class="num">${{ formatCurrency(holding.marketValue) }}</td>
+                    <td class="num">{{ formatNumber(holding.shares, locale) }}</td>
+                    <td class="num">{{ formatUsd(holding.avgCost, locale) }}</td>
+                    <td class="num">{{ formatUsd(holding.marketValue, locale) }}</td>
                     <td class="num">
                       <span class="weight">
                         <span class="weight-bar" :style="{ width: `${weightOf(holding.marketValue)}%` }"></span>
-                        {{ weightOf(holding.marketValue).toFixed(1) }}%
+                        {{ formatNumber(weightOf(holding.marketValue), locale, 1) }}%
                       </span>
                     </td>
                     <td class="num" :class="{ positive: holding.unrealizedPnL >= 0, negative: holding.unrealizedPnL < 0 }">
-                      {{ holding.unrealizedPnL >= 0 ? '+' : '-' }}${{ formatCurrency(Math.abs(holding.unrealizedPnL)) }}
+                      {{ formatSignedUsd(holding.unrealizedPnL, locale) }}
                     </td>
-                    <td class="updated">{{ formatDate(holding.lastUpdated) }}</td>
+                    <td class="updated">{{ formatDateTime(holding.lastUpdated, locale) }}</td>
                   </tr>
                 </tbody>
               </table>
@@ -179,11 +175,11 @@
           </EmptySheet>
           <ol v-else class="tx-lines">
             <li v-for="tx in recentTransactions" :key="tx.id" class="tx-line">
-              <span class="tx-type" :class="`tx-${tx.type.toLowerCase()}`">{{ t(`transactions.${tx.type.toLowerCase()}`) }}</span>
+              <span class="tx-type" :class="`tx-${tx.type.toLowerCase()}`">{{ transactionTypeLabel(tx.type) }}</span>
               <span class="tx-symbol">{{ tx.symbol ?? '—' }}</span>
               <span class="tx-qty fig">{{ tx.qty ? `${tx.qty} ${t('dashboard.sharesUnit')}` : '' }}</span>
-              <span class="tx-price fig">{{ tx.price ? `$${tx.price.toFixed(2)}` : '' }}</span>
-              <span class="tx-date fig">{{ formatDate(tx.timestamp) }}</span>
+              <span class="tx-price fig">{{ tx.price ? formatUsd(tx.price, locale) : '' }}</span>
+              <span class="tx-date fig">{{ formatDateTime(tx.timestamp, locale) }}</span>
             </li>
           </ol>
         </section>
@@ -209,23 +205,28 @@ import { useGoalPlanStore } from '@/stores/goalPlanStore'
 import { useConfigStore } from '@/stores/configStore'
 import { DEMO_EMAIL, ensureDemoPortfolio } from '@/utils/seedLoader'
 import { logger } from '@/utils/logger'
+import { formatDateTime, formatNumber, formatSignedUsd, formatUsd } from '@/utils/localeFormat'
+import { failureMessage, transactionTypeLabel } from '@/utils/localizedMessages'
+import { useToast } from '@/composables/useToast'
 import TitleBlock from '@/components/pad/TitleBlock.vue'
 import EmptySheet from '@/components/pad/EmptySheet.vue'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 
 const router = useRouter()
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const authStore = useAuthStore()
 const portfolioStore = usePortfolioStore()
 const transactionStore = useTransactionStore()
 const analyticsStore = useAnalyticsStore()
 const goalPlanStore = useGoalPlanStore()
 const configStore = useConfigStore()
+const toast = useToast()
 
 const isLoading = ref(false)
 const isOpeningSample = ref(false)
 const sampleAutoSelected = ref(false)
-const sampleError = ref<string | null>(null)
+// 화면 오류는 키와 원문 사유로 보관해 언어를 바꿔도 현재 언어로 다시 그린다
+const sampleError = ref<{ key: string; detail?: string | null } | null>(null)
 const selectedPortfolioId = ref<number | null>(null)
 
 // Computed
@@ -251,9 +252,12 @@ const analyticsError = computed(() =>
   holdings.value.length === 0 && analyticsStore.error === NO_RETURNS_ERROR ? null : analyticsStore.error
 )
 
-const loadError = computed(
-  () => sampleError.value || portfolioStore.error || transactionStore.error || analyticsError.value
-)
+// 스토어 오류는 저장된 원문을 두고 표시할 때만 현재 언어로 바꾼다
+const loadError = computed(() => {
+  if (sampleError.value) return failureMessage(sampleError.value.key, sampleError.value.detail)
+  const storeError = portfolioStore.error || transactionStore.error || analyticsError.value
+  return storeError ? failureMessage('dashboard.loadFailed', storeError) : null
+})
 
 // 선택한 포트폴리오의 거래와 지표 조회 (거래가 없으면 지표 계산을 건너뛴다)
 async function loadPortfolio(portfolioId: number) {
@@ -310,6 +314,7 @@ async function loadData() {
     }
   } catch (error) {
     console.error('Failed to load data:', error)
+    sampleError.value = { key: 'dashboard.loadFailed', detail: error instanceof Error ? error.message : null }
   } finally {
     isLoading.value = false
   }
@@ -343,7 +348,7 @@ async function openSamplePortfolio() {
       goalPlanStore.reset()
       analyticsStore.reset()
       if (!(await authStore.login(DEMO_EMAIL))) {
-        sampleError.value = authStore.error ?? t('dashboard.sampleLoadFailed')
+        sampleError.value = { key: 'dashboard.sampleLoadFailed', detail: authStore.error }
         router.push('/login')
         return
       }
@@ -351,14 +356,14 @@ async function openSamplePortfolio() {
 
     await portfolioStore.fetchPortfolios()
     if (!selectPortfolioById(demoPortfolioId)) {
-      sampleError.value = t('dashboard.sampleLoadFailed')
+      sampleError.value = { key: 'dashboard.sampleLoadFailed' }
       return
     }
     sampleAutoSelected.value = false
     await loadPortfolio(demoPortfolioId)
   } catch (error) {
     logger.error('Failed to open sample portfolio', error)
-    sampleError.value = t('dashboard.sampleLoadFailed')
+    sampleError.value = { key: 'dashboard.sampleLoadFailed' }
   } finally {
     isOpeningSample.value = false
     isLoading.value = false
@@ -370,32 +375,16 @@ async function createDemoPortfolio() {
   const success = await portfolioStore.createPortfolio('Demo Portfolio', 'USD')
   if (success) {
     await loadData()
+  } else {
+    // 포트폴리오가 없는 화면에는 오류 줄이 없으므로 toast로 알린다
+    toast.error(failureMessage('dashboard.createPortfolioFailed', portfolioStore.error))
   }
-}
-
-// 날짜 포맷
-function formatDate(dateStr: string): string {
-  const date = new Date(dateStr)
-  return date.toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  })
 }
 
 // 보유 비중 (%): 시장가치 / 총 가치
 function weightOf(marketValue: number): number {
   const total = portfolioMetrics.value?.totalValue ?? 0
   return total > 0 ? (marketValue / total) * 100 : 0
-}
-
-function formatCurrency(value: number): string {
-  return value.toLocaleString('en-US', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  })
 }
 
 // 초기 로드

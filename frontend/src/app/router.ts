@@ -3,7 +3,8 @@
  * Lazy loading으로 페이지별 코드 스플리팅 구현
  */
 
-import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
+import { createRouter, createWebHistory, type RouteLocationNormalizedLoaded, type RouteRecordRaw } from 'vue-router'
+import i18n from '@/i18n'
 
 // 라우트 정의 (lazy loading)
 const routes: RouteRecordRaw[] = [
@@ -12,7 +13,7 @@ const routes: RouteRecordRaw[] = [
     name: 'landing',
     component: () => import('@/pages/LandingPage.vue'),
     meta: {
-      title: 'FinancialLab - 금융 분석 플랫폼',
+      titleKey: 'titles.landing',
       requiresAuth: false
     }
   },
@@ -21,7 +22,7 @@ const routes: RouteRecordRaw[] = [
     name: 'login',
     component: () => import('@/pages/LoginPage.vue'),
     meta: {
-      title: '로그인 - FinancialLab',
+      titleKey: 'titles.login',
       requiresAuth: false
     }
   },
@@ -30,7 +31,7 @@ const routes: RouteRecordRaw[] = [
     name: 'dashboard',
     component: () => import('@/pages/DashboardPage.vue'),
     meta: {
-      title: '대시보드 - FinancialLab',
+      titleKey: 'titles.dashboard',
       requiresAuth: true
     }
   },
@@ -39,7 +40,7 @@ const routes: RouteRecordRaw[] = [
     name: 'transactions',
     component: () => import('@/pages/TransactionsPage.vue'),
     meta: {
-      title: '거래 내역 - FinancialLab',
+      titleKey: 'titles.transactions',
       requiresAuth: true
     }
   },
@@ -48,7 +49,7 @@ const routes: RouteRecordRaw[] = [
     name: 'goals-plans',
     component: () => import('@/pages/GoalsPlansPage.vue'),
     meta: {
-      title: '목표 및 계획 - FinancialLab',
+      titleKey: 'titles.goalsPlans',
       requiresAuth: true
     }
   },
@@ -57,7 +58,7 @@ const routes: RouteRecordRaw[] = [
     name: 'backtest',
     component: () => import('@/pages/BacktestLabPage.vue'),
     meta: {
-      title: '백테스트 연구소 - FinancialLab',
+      titleKey: 'titles.backtest',
       requiresAuth: true
     }
   },
@@ -66,7 +67,7 @@ const routes: RouteRecordRaw[] = [
     name: 'api-playground',
     component: () => import('@/pages/ApiPlaygroundPage.vue'),
     meta: {
-      title: 'API 플레이그라운드 - FinancialLab',
+      titleKey: 'titles.apiPlayground',
       requiresAuth: false
     }
   },
@@ -75,7 +76,7 @@ const routes: RouteRecordRaw[] = [
     name: 'docs',
     component: () => import('@/pages/DocsPage.vue'),
     meta: {
-      title: '문서화 - FinancialLab',
+      titleKey: 'titles.docs',
       requiresAuth: false
     }
   },
@@ -105,12 +106,17 @@ const router = createRouter({
   }
 })
 
+/** 라우트 메타의 titleKey를 현재 언어로 문서 제목에 반영 */
+export function applyRouteTitle(route: Pick<RouteLocationNormalizedLoaded, 'meta'>) {
+  if (typeof route.meta.titleKey === 'string') {
+    document.title = i18n.global.t(route.meta.titleKey)
+  }
+}
+
 // Navigation guards
 router.beforeEach(async (to) => {
-  // 페이지 타이틀 업데이트
-  if (to.meta.title) {
-    document.title = to.meta.title as string
-  }
+  // 페이지 타이틀 업데이트 (언어 전환 시에는 main.ts가 다시 적용)
+  applyRouteTitle(to)
 
   // 인증 체크
   if (to.meta.requiresAuth) {

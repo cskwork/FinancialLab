@@ -53,13 +53,7 @@
               </span>
             </summary>
             <div class="settings-panel">
-              <div class="field">
-                <label for="language-select">{{ t('nav.language') }}</label>
-                <select id="language-select" v-model="currentLocale">
-                  <option value="ko">{{ t('nav.korean') }}</option>
-                  <option value="en">{{ t('nav.english') }}</option>
-                </select>
-              </div>
+              <LocaleSelect />
               <p v-if="configStore.isDemoOnly" class="hint">{{ t('nav.demoOnlyHint') }}</p>
               <template v-else>
                 <div class="field">
@@ -120,12 +114,13 @@ import { usePortfolioStore } from '@/stores/portfolioStore'
 import { useTransactionStore } from '@/stores/transactionStore'
 import { useGoalPlanStore } from '@/stores/goalPlanStore'
 import { useAnalyticsStore } from '@/stores/analyticsStore'
-import { useConfigStore, type BackendMode, type Locale } from '@/stores/configStore'
+import { useConfigStore, type BackendMode } from '@/stores/configStore'
 import { useToast } from '@/composables/useToast'
+import LocaleSelect from './LocaleSelect.vue'
 
 const router = useRouter()
 const route = useRoute()
-const { t, locale } = useI18n()
+const { t } = useI18n()
 const authStore = useAuthStore()
 const portfolioStore = usePortfolioStore()
 const transactionStore = useTransactionStore()
@@ -155,14 +150,6 @@ const backendMode = computed({
 const backendUrl = computed({
   get: () => configStore.backendUrl,
   set: (value) => configStore.setBackendUrl(value.trim())
-})
-
-const currentLocale = computed({
-  get: () => configStore.locale,
-  set: (value: Locale) => {
-    configStore.setLocale(value)
-    locale.value = value
-  }
 })
 
 function closeMenu() {

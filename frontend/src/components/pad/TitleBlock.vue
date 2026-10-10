@@ -9,7 +9,7 @@
       <p v-if="$slots.default || subtitle" class="tb-sub"><slot>{{ subtitle }}</slot></p>
     </div>
     <div v-if="sheet" class="tb-cell tb-sheet">
-      <span class="tb-key">{{ sheetLabel }}</span>
+      <span class="tb-key">{{ sheetLabel || t('pad.sheet') }}</span>
       <span class="tb-sheet-no fig">{{ sheet }}</span>
     </div>
     <div v-if="$slots.actions" class="tb-cell tb-actions">
@@ -19,6 +19,10 @@
 </template>
 
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
+
 withDefaults(
   defineProps<{
     title?: string
@@ -30,7 +34,7 @@ withDefaults(
     title: '',
     subtitle: '',
     sheet: '',
-    sheetLabel: 'Sheet'
+    sheetLabel: ''
   }
 )
 </script>

@@ -1,35 +1,35 @@
 <template>
   <div class="page backtest-page">
-    <TitleBlock title="Backtest Lab" sheet="04 / 04">
-      Compare dollar-cost averaging against lump-sum investing using local OHLCV data.
+    <TitleBlock :title="t('backtest.title')" sheet="04 / 04">
+      {{ t('backtest.subtitle') }}
     </TitleBlock>
 
     <div class="lab-grid">
       <section class="block given" aria-labelledby="given-heading">
         <div class="block-head">
-          <h2 id="given-heading">Given</h2>
+          <h2 id="given-heading">{{ t('backtest.given') }}</h2>
         </div>
         <form class="form-grid" novalidate @submit.prevent="runBacktest">
           <div class="field">
-            <label for="bt-symbol">Symbol</label>
+            <label for="bt-symbol">{{ t('backtest.symbol') }}</label>
             <select id="bt-symbol" v-model="form.symbol" required @change="handleSymbolChange">
-              <option v-if="symbols.length === 0" value="" disabled>Loading sample data…</option>
+              <option v-if="symbols.length === 0" value="" disabled>{{ t('backtest.loadingData') }}</option>
               <option v-for="symbol in symbols" :key="symbol" :value="symbol">{{ symbol }}</option>
             </select>
           </div>
           <div class="field">
-            <label for="bt-interval">Interval</label>
+            <label for="bt-interval">{{ t('backtest.interval') }}</label>
             <select id="bt-interval" v-model="form.dcaInterval" required>
-              <option value="WEEKLY">Weekly</option>
-              <option value="MONTHLY">Monthly</option>
+              <option value="WEEKLY">{{ t('backtest.weekly') }}</option>
+              <option value="MONTHLY">{{ t('backtest.monthly') }}</option>
             </select>
           </div>
           <div class="field">
-            <label for="bt-start">Start Date</label>
+            <label for="bt-start">{{ t('backtest.startDate') }}</label>
             <input id="bt-start" v-model="form.startDate" type="date" required :aria-invalid="dateError" />
           </div>
           <div class="field">
-            <label for="bt-end">End Date</label>
+            <label for="bt-end">{{ t('backtest.endDate') }}</label>
             <input
               id="bt-end"
               v-model="form.endDate"
@@ -40,78 +40,78 @@
             />
           </div>
           <div class="field">
-            <label for="bt-capital">Initial Capital (USD)</label>
+            <label for="bt-capital">{{ t('backtest.initialCapital') }}</label>
             <input id="bt-capital" v-model.number="form.initialCapital" type="number" min="100" step="100" required />
           </div>
           <div class="field">
-            <label for="bt-dca">DCA Amount (USD)</label>
+            <label for="bt-dca">{{ t('backtest.dcaAmount') }}</label>
             <input id="bt-dca" v-model.number="form.dcaAmount" type="number" min="1" step="50" required />
           </div>
           <p v-if="dateError" id="bt-date-error" class="form-error" role="alert">
-            Start date must be before end date.
+            {{ t('backtest.dateError') }}
           </p>
           <div class="form-actions">
             <button class="btn btn--primary run-btn" type="submit" :disabled="isRunning || !canRun">
               <Play v-if="!isRunning" aria-hidden="true" />
               <span v-else class="run-spinner spinner" aria-hidden="true"></span>
-              {{ isRunning ? 'Running...' : 'Run Backtest' }}
+              {{ isRunning ? t('backtest.running') : t('backtest.run') }}
             </button>
-            <span v-if="dataRange" class="range-note fig">Data: {{ dataRange }}</span>
+            <span v-if="dataRange" class="range-note fig">{{ t('backtest.dataRange', { range: `${day(dataRange.start)} → ${day(dataRange.end)}` }) }}</span>
           </div>
         </form>
       </section>
 
       <section class="block results" aria-labelledby="results-heading" aria-live="polite">
         <div class="block-head">
-          <h2 id="results-heading">Results</h2>
-          <p v-if="result">{{ form.symbol }} · {{ form.startDate }} → {{ form.endDate }}</p>
+          <h2 id="results-heading">{{ t('backtest.results') }}</h2>
+          <p v-if="result">{{ form.symbol }} · {{ day(form.startDate) }} → {{ day(form.endDate) }}</p>
         </div>
 
         <template v-if="result">
           <div class="verdict" :key="runId">
             <p class="verdict-line">
-              <strong>{{ result.comparison.lumpSumWins ? 'Lump Sum outperformed.' : 'DCA outperformed.' }}</strong>
+              <strong>{{ result.comparison.lumpSumWins ? t('backtest.verdictLump') : t('backtest.verdictDca') }}</strong>
               <span class="verdict-diff">
-                Difference: <span class="fig">${{ formatCurrency(Math.abs(result.comparison.dcaDifference)) }}</span>
+                {{ t('backtest.difference') }} <span class="fig">{{ formatUsd(Math.abs(result.comparison.dcaDifference), locale) }}</span>
               </span>
             </p>
           </div>
 
           <div class="results-grid">
             <div class="result-group" :class="{ winner: !result.comparison.lumpSumWins }">
-              <h3><i class="key key-dca" aria-hidden="true"></i>DCA Strategy<Check v-if="!result.comparison.lumpSumWins" class="win-mark" aria-hidden="true" /></h3>
+              <h3><i class="key key-dca" aria-hidden="true"></i>{{ t('backtest.dcaStrategy') }}<Check v-if="!result.comparison.lumpSumWins" class="win-mark" aria-hidden="true" /></h3>
               <dl>
                 <div>
-                  <dt>Total Invested</dt>
-                  <dd class="fig">${{ formatCurrency(result.dcaStrategy.totalInvested) }}</dd>
+                  <dt>{{ t('backtest.totalInvested') }}</dt>
+                  <dd class="fig">{{ formatUsd(result.dcaStrategy.totalInvested, locale) }}</dd>
                 </div>
                 <div>
-                  <dt>Final Value</dt>
-                  <dd class="fig">${{ formatCurrency(result.dcaStrategy.finalValue) }}</dd>
+                  <dt>{{ t('backtest.finalValue') }}</dt>
+                  <dd class="fig">{{ formatUsd(result.dcaStrategy.finalValue, locale) }}</dd>
                 </div>
                 <div>
-                  <dt>Return %</dt>
+                  <dt>{{ t('backtest.returnPct') }}</dt>
                   <dd class="fig" :class="{ negative: result.dcaStrategy.returnPercentage < 0 }">
-                    {{ result.dcaStrategy.returnPercentage.toFixed(2) }}%
+                    {{ formatNumber(result.dcaStrategy.returnPercentage, locale) }}%
                   </dd>
                 </div>
               </dl>
             </div>
             <div class="result-group" :class="{ winner: result.comparison.lumpSumWins }">
-              <h3><i class="key key-lump" aria-hidden="true"></i>Lump Sum<Check v-if="result.comparison.lumpSumWins" class="win-mark" aria-hidden="true" /></h3>
+              <h3><i class="key key-lump" aria-hidden="true"></i>{{ t('backtest.lumpSum') }}<Check v-if="result.comparison.lumpSumWins" class="win-mark" aria-hidden="true" /></h3>
               <dl>
                 <div>
-                  <dt>Total Invested</dt>
-                  <dd class="fig">${{ formatCurrency(result.lumpSumStrategy.totalInvested) }}</dd>
+                  <dt>{{ t('backtest.totalInvested') }}</dt>
+                  <dd class="fig">{{ formatUsd(result.lumpSumStrategy.totalInvested, locale) }}</dd>
                 </div>
                 <div>
-                  <dt>Final Value</dt>
-                  <dd class="fig">${{ formatCurrency(result.lumpSumStrategy.finalValue) }}</dd>
+                  <dt>{{ t('backtest.finalValue') }}</dt>
+                  <dd class="fig">{{ formatUsd(result.lumpSumStrategy.finalValue, locale) }}</dd>
                 </div>
                 <div>
-                  <dt>Return %</dt>
+                  <dt>{{ t('backtest.returnPct') }}</dt>
                   <dd class="fig" :class="{ negative: result.lumpSumStrategy.returnPercentage < 0 }">
-                    {{ result.lumpSumStrategy.returnPercentage.toFixed(2) }}%
+                    {{ formatNumber(result.lumpSumStrategy.returnPercentage, locale) }}%
                   </dd>
                 </div>
               </dl>
@@ -123,15 +123,14 @@
             :key="`chart-${runId}`"
             class="curve"
             :points="curve"
-            :labels="{ dca: 'DCA', lump: 'Lump Sum', invested: 'DCA invested' }"
-            caption="Portfolio value at each daily close. Trades fill at that day's close, as in the simulation."
+            :caption="t('backtest.chartCaption')"
           />
         </template>
 
-        <LoadingSpinner v-else-if="isRunning" message="Running..." />
+        <LoadingSpinner v-else-if="isRunning" :message="t('backtest.running')" />
 
         <EmptySheet v-else>
-          Run the simulation to see which approach wins for your chosen symbol and period.
+          {{ t('backtest.empty') }}
         </EmptySheet>
       </section>
     </div>
@@ -140,6 +139,7 @@
 
 <script setup lang="ts">
 import { reactive, ref, onMounted, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { db } from '@/services/db/schema'
 import { Play, Check } from 'lucide-vue-next'
 import { useToast } from '@/composables/useToast'
@@ -148,6 +148,8 @@ import EmptySheet from '@/components/pad/EmptySheet.vue'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import EquityChart from '@/components/charts/EquityChart.vue'
 import { buildEquityCurves, type EquityPoint } from '@/utils/equityCurve'
+import { formatNumber, formatSessionDay, formatUsd } from '@/utils/localeFormat'
+import { failureMessage } from '@/utils/localizedMessages'
 
 interface BacktestForm {
   symbol: string
@@ -176,13 +178,14 @@ interface BacktestResult {
   }
 }
 
+const { t, locale } = useI18n()
 const toast = useToast()
 const symbols = ref<string[]>([])
 const isRunning = ref(false)
 const result = ref<BacktestResult | null>(null)
 const curve = ref<EquityPoint[]>([])
 const runId = ref(0)
-const dataRange = ref('')
+const dataRange = ref<{ start: string; end: string } | null>(null)
 const form = reactive<BacktestForm>({
   symbol: '',
   startDate: '',
@@ -226,7 +229,7 @@ async function updateDateRange() {
 
   form.startDate = candles[0]!.date
   form.endDate = candles[candles.length - 1]!.date
-  dataRange.value = `${form.startDate} → ${form.endDate}`
+  dataRange.value = { start: form.startDate, end: form.endDate }
 }
 
 function handleSymbolChange() {
@@ -235,16 +238,9 @@ function handleSymbolChange() {
   curve.value = []
 }
 
-function formatCurrency(value: number): string {
-  return value.toLocaleString('en-US', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  })
-}
-
 async function runBacktest() {
   if (!canRun.value) {
-    toast.warning('유효한 기간과 금액을 입력하세요.')
+    toast.warning(t('backtest.invalidInput'))
     return
   }
 
@@ -260,7 +256,7 @@ async function runBacktest() {
       .toArray()
 
     if (candles.length < 10) {
-      toast.warning('선택한 구간의 데이터가 부족합니다.')
+      toast.warning(t('backtest.insufficientData'))
       return
     }
 
@@ -273,7 +269,7 @@ async function runBacktest() {
         if (event.data.type === 'success') {
           resolve(event.data.data)
         } else if (event.data.type === 'error') {
-          reject(new Error(event.data.error ?? 'Backtest worker failed'))
+          reject(new Error(event.data.error ?? ''))
         }
         worker.terminate()
       }
@@ -311,17 +307,27 @@ async function runBacktest() {
     )
     runId.value += 1
 
-    toast.success('백테스트가 완료되었습니다.')
+    toast.success(t('backtest.completed'))
   } catch (error) {
     console.error(error)
-    toast.error(error instanceof Error ? error.message : '백테스트 실행에 실패했습니다.')
+    // 워커 오류(ErrorEvent)도 Error와 같이 메시지를 사유로 보여준다
+    const detail = error instanceof Error || error instanceof ErrorEvent ? error.message : null
+    toast.error(failureMessage('backtest.failed', detail))
   } finally {
     isRunning.value = false
   }
 }
 
+// 표시용 날짜 (입력 필드의 YYYY-MM-DD 값은 그대로 둔다)
+function day(value: string): string {
+  return value ? formatSessionDay(value, locale.value) : ''
+}
+
 onMounted(() => {
-  loadSymbols()
+  loadSymbols().catch((error) => {
+    console.error(error)
+    toast.error(failureMessage('backtest.symbolsFailed', error instanceof Error ? error.message : null))
+  })
 })
 </script>
 

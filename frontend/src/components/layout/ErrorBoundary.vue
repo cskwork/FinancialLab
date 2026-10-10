@@ -2,11 +2,11 @@
   <div>
     <slot v-if="!hasError" />
     <div v-else class="error-fallback" role="alert">
-      <h1>문제가 발생했습니다</h1>
-      <p class="message">{{ errorMessage }}</p>
+      <h1>{{ t('errorBoundary.title') }}</h1>
+      <p class="message">{{ errorMessage ?? t('errorBoundary.unknown') }}</p>
       <div class="actions">
-        <button type="button" class="btn btn--primary" @click="handleRetry">다시 시도</button>
-        <button type="button" class="btn" @click="goHome">대시보드로 이동</button>
+        <button type="button" class="btn btn--primary" @click="handleRetry">{{ t('errorBoundary.retry') }}</button>
+        <button type="button" class="btn" @click="goHome">{{ t('errorBoundary.goDashboard') }}</button>
       </div>
     </div>
   </div>
@@ -15,21 +15,24 @@
 <script setup lang="ts">
 import { ref, onErrorCaptured } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { useToast } from '@/composables/useToast'
 
 const hasError = ref(false)
-const errorMessage = ref('알 수 없는 오류가 발생했습니다.')
+// null이면 현재 언어의 기본 문구를 보여준다
+const errorMessage = ref<string | null>(null)
 const router = useRouter()
+const { t } = useI18n()
 const toast = useToast()
 
 function resetError() {
   hasError.value = false
-  errorMessage.value = '알 수 없는 오류가 발생했습니다.'
+  errorMessage.value = null
 }
 
 function handleRetry() {
   resetError()
-  toast.info('화면을 다시 불러왔습니다')
+  toast.info(t('errorBoundary.reloaded'))
 }
 
 function goHome() {
@@ -46,11 +49,11 @@ onErrorCaptured((err) => {
     err.message.includes('Invalid linked format') ||
     err.message.includes('contentscript')
   )) {
-    errorMessage.value = '브라우저 확장 프로그램과 충돌이 발생했습니다. 확장 프로그램을 비활성화하고 다시 시도하세요.'
-    toast.error('브라우저 확장 프로그램 충돌이 감지되었습니다.')
+    errorMessage.value = t('errorBoundary.extensionConflict')
+    toast.error(t('errorBoundary.extensionToast'))
   } else {
-    errorMessage.value = err instanceof Error ? err.message : '예상치 못한 오류입니다.'
-    toast.error('오류가 발생했습니다. 잠시 후 다시 시도하세요.')
+    errorMessage.value = err instanceof Error ? err.message : t('errorBoundary.unexpected')
+    toast.error(t('errorBoundary.genericToast'))
   }
 
   console.error('[ErrorBoundary]', err)

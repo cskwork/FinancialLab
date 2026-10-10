@@ -1,10 +1,10 @@
 <template>
   <div class="page playground-page">
-    <TitleBlock title="API Playground" sheet="App. A" sheet-label="Appendix">
-      Inspect the OpenAPI contract and exercise mock or live endpoints directly from the browser.
+    <TitleBlock :title="t('playground.title')" :sheet="t('playground.sheet')" :sheet-label="t('common.appendix')">
+      {{ t('playground.subtitle') }}
       <template #actions>
         <span class="mode-hint">
-          Current backend mode: <strong class="mode-chip" :class="{ live: configStore.backendMode === 'live' }">{{ configStore.backendMode.toUpperCase() }}</strong>
+          {{ t('playground.currentMode') }} <strong class="mode-chip" :class="{ live: configStore.backendMode === 'live' }">{{ configStore.backendMode.toUpperCase() }}</strong>
         </span>
       </template>
     </TitleBlock>
@@ -12,10 +12,10 @@
     <section class="content">
       <aside class="sidebar" aria-labelledby="endpoints-heading">
         <div class="block-head">
-          <h2 id="endpoints-heading">Endpoints</h2>
+          <h2 id="endpoints-heading">{{ t('playground.endpoints') }}</h2>
           <span class="fig muted">{{ operations.length }}</span>
         </div>
-        <p v-if="operations.length === 0" class="muted">Loading OpenAPI spec…</p>
+        <p v-if="operations.length === 0" class="muted">{{ t('playground.loadingSpec') }}</p>
         <ul class="endpoint-list">
           <li v-for="operation in operations" :key="operation.operationId">
             <button
@@ -33,12 +33,12 @@
 
       <div v-if="selectedOperation" class="details">
         <header class="details-header">
-          <h2>{{ selectedOperation.summary }}</h2>
+          <h2>{{ selectedSummary }}</h2>
           <code>{{ selectedOperation.method.toUpperCase() }} {{ selectedOperation.path }}</code>
         </header>
 
         <section class="request-section" aria-labelledby="request-heading">
-          <h3 id="request-heading" class="label">Request</h3>
+          <h3 id="request-heading" class="label">{{ t('playground.request') }}</h3>
           <div v-if="pathParamsKeys.length" class="param-grid">
             <div v-for="param in pathParamsKeys" :key="param" class="field">
               <label :for="`param-${param}`">{{ param }}</label>
@@ -47,24 +47,24 @@
           </div>
 
           <div v-if="selectedOperation.requiresBody" class="field body-editor">
-            <label for="request-body">Request Body (JSON)</label>
+            <label for="request-body">{{ t('playground.requestBody') }}</label>
             <textarea id="request-body" v-model="requestPayload" rows="10" spellcheck="false"></textarea>
           </div>
 
           <button class="btn btn--primary" :disabled="isExecuting" @click="execute">
             <Send aria-hidden="true" />
-            {{ isExecuting ? 'Executing...' : 'Execute' }}
+            {{ isExecuting ? t('playground.executing') : t('playground.execute') }}
           </button>
         </section>
 
         <section v-if="response" class="response-section" aria-labelledby="response-heading" aria-live="polite">
-          <h3 id="response-heading" class="label">Response (<span class="fig">{{ response.status }}</span>)</h3>
+          <h3 id="response-heading" class="label">{{ t('playground.response') }} (<span class="fig">{{ response.status }}</span>)</h3>
           <pre>{{ responseBody }}</pre>
         </section>
       </div>
 
       <div v-else class="details details-empty">
-        <EmptySheet compact>Select an endpoint to view details and execute it.</EmptySheet>
+        <EmptySheet compact>{{ t('playground.selectPrompt') }}</EmptySheet>
       </div>
     </section>
   </div>
@@ -72,6 +72,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useConfigStore } from '@/stores/configStore'
 import { useAuthStore } from '@/stores/authStore'
 import { usePortfolioStore } from '@/stores/portfolioStore'
@@ -80,6 +81,7 @@ import { useToast } from '@/composables/useToast'
 import { Send } from 'lucide-vue-next'
 import TitleBlock from '@/components/pad/TitleBlock.vue'
 import EmptySheet from '@/components/pad/EmptySheet.vue'
+import { failureMessage } from '@/utils/localizedMessages'
 
 interface ApiOperation {
   method: string
@@ -95,6 +97,10 @@ interface ApiResponsePayload {
   body: unknown
 }
 
+// 이미 현재 언어로 작성된 실행 오류 (요청 실패 제목을 다시 덧붙이지 않는다)
+class PlaygroundError extends Error {}
+
+const { t, te } = useI18n()
 const configStore = useConfigStore()
 const authStore = useAuthStore()
 const portfolioStore = usePortfolioStore()
@@ -109,6 +115,14 @@ const pathParams = reactive<Record<string, string>>({})
 
 const pathParamsKeys = computed(() => Object.keys(pathParams))
 const responseBody = computed(() => (response.value ? JSON.stringify(response.value.body, null, 2) : ''))
+
+// OpenAPI 원문 summary는 그대로 두고, 번들 명세의 operationId만 현재 언어 이름으로 보여준다 (모르는 작업은 원문)
+const selectedSummary = computed(() => {
+  const operation = selectedOperation.value
+  if (!operation) return ''
+  const key = `playground.summaries.${operation.operationId}`
+  return te(key) ? t(key) : operation.summary
+})
 
 async function loadSpec() {
   try {
@@ -132,7 +146,7 @@ async function loadSpec() {
 
     operations.value = ops
   } catch (error) {
-    toast.error('Failed to load OpenAPI spec.')
+    toast.error(failureMessage('playground.specLoadFailed', error instanceof Error ? error.message : null))
     console.error(error)
   }
 }
@@ -169,7 +183,7 @@ async function execute() {
       try {
         payload = JSON.parse(requestPayload.value)
       } catch (err) {
-        toast.error('Request body must be valid JSON.')
+        toast.error(failureMessage('playground.invalidJson', err instanceof Error ? err.message : null))
         return
       }
     }
@@ -182,7 +196,11 @@ async function execute() {
     }
     response.value = result
   } catch (error) {
-    toast.error(error instanceof Error ? error.message : 'Request failed')
+    if (error instanceof PlaygroundError) {
+      toast.error(error.message)
+    } else {
+      toast.error(failureMessage('playground.requestFailed', error instanceof Error ? error.message : null))
+    }
   } finally {
     isExecuting.value = false
   }
@@ -200,54 +218,54 @@ async function executeMockOperation(operationId: string, body: unknown): Promise
   switch (operationId) {
     case 'login': {
       const response = await apiClient.login(body as { email: string })
-      if (!response.success) throw new Error(response.error?.message ?? 'Login failed')
+      if (!response.success) throw new PlaygroundError(failureMessage('playground.ops.login', response.error?.message))
       return { status: 200, body: response.data }
     }
     case 'listPortfolios': {
       await ensureSession()
       const response = await apiClient.getPortfolios(authStore.currentUserId!, authStore.token)
-      if (!response.success) throw new Error(response.error?.message ?? 'Failed to list portfolios')
+      if (!response.success) throw new PlaygroundError(failureMessage('playground.ops.listPortfolios', response.error?.message))
       return { status: 200, body: response.data }
     }
     case 'createPortfolio': {
       await ensureSession()
       const response = await apiClient.createPortfolio(authStore.currentUserId!, body as any, authStore.token)
-      if (!response.success) throw new Error(response.error?.message ?? 'Failed to create portfolio')
+      if (!response.success) throw new PlaygroundError(failureMessage('playground.ops.createPortfolio', response.error?.message))
       return { status: 201, body: response.data }
     }
     case 'listTransactions': {
       await ensureSession()
       const portfolioId = Number(pathParams.id)
-      if (!portfolioId) throw new Error('Provide a portfolio id.')
+      if (!portfolioId) throw new PlaygroundError(t('playground.portfolioIdRequired'))
       const response = await apiClient.getTransactions(portfolioId, authStore.token)
-      if (!response.success) throw new Error(response.error?.message ?? 'Failed to list transactions')
+      if (!response.success) throw new PlaygroundError(failureMessage('playground.ops.listTransactions', response.error?.message))
       return { status: 200, body: response.data }
     }
     case 'createTransaction': {
       await ensureSession()
       const portfolioId = Number(pathParams.id)
-      if (!portfolioId) throw new Error('Provide a portfolio id.')
+      if (!portfolioId) throw new PlaygroundError(t('playground.portfolioIdRequired'))
       const response = await apiClient.createTransaction(
         { ...(body as Record<string, unknown>), portfolioId } as any,
         authStore.token
       )
-      if (!response.success) throw new Error(response.error?.message ?? 'Failed to create transaction')
+      if (!response.success) throw new PlaygroundError(failureMessage('playground.ops.createTransaction', response.error?.message))
       return { status: 201, body: response.data }
     }
     case 'getHoldings': {
       await ensureSession()
       const portfolioId = Number(pathParams.id)
-      if (!portfolioId) throw new Error('Provide a portfolio id.')
+      if (!portfolioId) throw new PlaygroundError(t('playground.portfolioIdRequired'))
       const response = await apiClient.getHoldings(portfolioId, authStore.token)
-      if (!response.success) throw new Error(response.error?.message ?? 'Failed to load holdings')
+      if (!response.success) throw new PlaygroundError(failureMessage('playground.ops.getHoldings', response.error?.message))
       return { status: 200, body: response.data }
     }
     case 'getPortfolioMetrics': {
       await ensureSession()
       const portfolioId = Number(pathParams.id)
-      if (!portfolioId) throw new Error('Provide a portfolio id.')
+      if (!portfolioId) throw new PlaygroundError(t('playground.portfolioIdRequired'))
       const response = await apiClient.getPortfolioMetrics(portfolioId, authStore.token)
-      if (!response.success) throw new Error(response.error?.message ?? 'Failed to load metrics')
+      if (!response.success) throw new PlaygroundError(failureMessage('playground.ops.getPortfolioMetrics', response.error?.message))
       return { status: 200, body: response.data }
     }
     case 'listGoals':
@@ -256,14 +274,14 @@ async function executeMockOperation(operationId: string, body: unknown): Promise
       const portfolioId = Number(pathParams.id)
       if (operationId === 'listGoals') {
         const response = await apiClient.getGoals(portfolioId, authStore.token)
-        if (!response.success) throw new Error(response.error?.message ?? 'Failed to load goals')
+        if (!response.success) throw new PlaygroundError(failureMessage('playground.ops.listGoals', response.error?.message))
         return { status: 200, body: response.data }
       }
       const response = await apiClient.createGoal(
         { ...(body as Record<string, unknown>), portfolioId } as any,
         authStore.token
       )
-      if (!response.success) throw new Error(response.error?.message ?? 'Failed to create goal')
+      if (!response.success) throw new PlaygroundError(failureMessage('playground.ops.createGoal', response.error?.message))
       return { status: 201, body: response.data }
     }
     case 'listPlans':
@@ -272,24 +290,24 @@ async function executeMockOperation(operationId: string, body: unknown): Promise
       const portfolioId = Number(pathParams.id)
       if (operationId === 'listPlans') {
         const response = await apiClient.getPlans(portfolioId, authStore.token)
-        if (!response.success) throw new Error(response.error?.message ?? 'Failed to load plans')
+        if (!response.success) throw new PlaygroundError(failureMessage('playground.ops.listPlans', response.error?.message))
         return { status: 200, body: response.data }
       }
       const response = await apiClient.createPlan(
         { ...(body as Record<string, unknown>), portfolioId } as any,
         authStore.token
       )
-      if (!response.success) throw new Error(response.error?.message ?? 'Failed to create plan')
+      if (!response.success) throw new PlaygroundError(failureMessage('playground.ops.createPlan', response.error?.message))
       return { status: 201, body: response.data }
     }
     default:
-      throw new Error(`Operation ${operationId} is not supported in mock mode yet.`)
+      throw new PlaygroundError(t('playground.unsupported', { operationId }))
   }
 }
 
 async function executeLiveOperation(method: string, path: string, body: unknown): Promise<ApiResponsePayload> {
   const baseUrl = configStore.backendUrl.replace(/\/$/, '')
-  if (!baseUrl) throw new Error('Backend URL is not configured.')
+  if (!baseUrl) throw new PlaygroundError(t('playground.backendUrlMissing'))
 
   const response = await fetch(`${baseUrl}${path}`, {
     method,
@@ -302,7 +320,10 @@ async function executeLiveOperation(method: string, path: string, body: unknown)
 
   const payload = await response.json().catch(() => ({}))
   if (!response.ok) {
-    throw new Error(payload?.message ?? `Live request failed with status ${response.status}`)
+    // 응답 본문의 message는 서버 원문 그대로 사유로 보여준다
+    throw new PlaygroundError(
+      failureMessage('playground.requestFailed', payload?.message ?? t('playground.liveStatusFailed', { status: response.status }))
+    )
   }
 
   return {
@@ -313,7 +334,7 @@ async function executeLiveOperation(method: string, path: string, body: unknown)
 
 async function ensureSession() {
   if (!authStore.isAuthenticated) {
-    throw new Error('Login first via the auth endpoint to obtain a session.')
+    throw new PlaygroundError(t('playground.loginFirst'))
   }
 }
 

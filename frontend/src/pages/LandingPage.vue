@@ -11,41 +11,44 @@
           <span>FinLab</span>
         </div>
         <div class="cb-cell cb-subject">
-          <span class="cb-key">Subject</span>
-          <span>Portfolio simulation</span>
+          <span class="cb-key">{{ t('pad.subject') }}</span>
+          <span>{{ t('landing.subjectValue') }}</span>
         </div>
         <div class="cb-cell cb-sheet">
-          <span class="cb-key">Sheet</span>
-          <span class="fig">00 · Cover</span>
+          <span class="cb-key">{{ t('pad.sheet') }}</span>
+          <span class="fig">{{ t('landing.sheetValue') }}</span>
         </div>
-        <nav class="cb-cell cb-links" aria-label="Cover links">
-          <router-link to="/api-playground">API Playground</router-link>
-          <router-link to="/docs">Docs</router-link>
-          <router-link v-if="!isAuthenticated" to="/login">Login</router-link>
-        </nav>
+        <div class="cb-cell cb-links">
+          <nav class="cb-nav" :aria-label="t('landing.coverLinks')">
+            <router-link to="/api-playground">{{ t('nav.apiPlayground') }}</router-link>
+            <router-link to="/docs">{{ t('nav.docs') }}</router-link>
+            <router-link v-if="!isAuthenticated" to="/login">{{ t('common.login') }}</router-link>
+          </nav>
+          <LocaleSelect id="landing-language" compact />
+        </div>
       </header>
 
       <section class="hero" aria-labelledby="hero-title">
         <div class="hero-copy">
           <h1 id="hero-title" class="hero-title">FinLab</h1>
-          <p class="tagline">Full-stack fintech simulation: Vue 3 frontend + Java Spring Boot backend</p>
-          <div class="cta-buttons" role="group" aria-label="Primary actions">
+          <p class="tagline">{{ t('landing.tagline') }}</p>
+          <div class="cta-buttons" role="group" :aria-label="t('landing.primaryActions')">
             <button type="button" class="btn btn--primary btn--lg" :disabled="isOpening" @click="openDemo">
               <LayoutDashboard aria-hidden="true" />
-              {{ isOpening ? 'Opening demo…' : 'Try Dashboard' }}
+              {{ isOpening ? t('landing.openingDemo') : t('landing.tryDashboard') }}
             </button>
             <router-link to="/api-playground" class="btn">
               <Braces aria-hidden="true" />
-              Try API Playground
+              {{ t('landing.tryApi') }}
             </router-link>
             <router-link to="/docs" class="btn btn--quiet">
               <FileCode2 aria-hidden="true" />
-              Java Docs &amp; Coverage
+              {{ t('landing.javaDocs') }}
             </router-link>
           </div>
-          <p class="demo-note">
-            Opens the demo account (<code>demo@finlab.app</code>) with sample trades already on the books. No password.
-          </p>
+          <i18n-t scope="global" keypath="landing.demoNote" tag="p" class="demo-note">
+            <template #email><code>{{ DEMO_EMAIL }}</code></template>
+          </i18n-t>
         </div>
 
         <figure class="hero-plate">
@@ -55,55 +58,52 @@
             sizes="(max-width: 900px) 100vw, 58vw"
             width="1600"
             height="1067"
-            alt="A green engineering computation pad with two hand-plotted pencil curves, columns of figures, one negative value in red pencil and a final figure boxed in yellow highlighter, beside a mechanical pencil and a red pencil."
+            :alt="t('landing.heroAlt')"
             fetchpriority="high"
           />
-          <figcaption>Illustration: the working, by hand. The app does the same sums in Web Workers.</figcaption>
+          <figcaption>{{ t('landing.heroCaption') }}</figcaption>
         </figure>
       </section>
 
       <section class="problem" aria-labelledby="problem-heading">
-        <h2 id="problem-heading" class="sr-only">How FinLab works</h2>
+        <h2 id="problem-heading" class="sr-only">{{ t('landing.howItWorks') }}</h2>
         <dl class="problem-sheet">
           <div class="p-row">
-            <dt>Given</dt>
-            <dd>
-              Daily AAPL and SPY candles (Jan–Apr 2024), a demo portfolio of sample trades, and your browser's
-              IndexedDB. Mock mode needs no server.
-            </dd>
+            <dt>{{ t('landing.given') }}</dt>
+            <dd>{{ t('landing.givenBody') }}</dd>
           </div>
           <div class="p-row">
-            <dt>Find</dt>
-            <dd>Cost basis per holding, portfolio risk, and whether dollar-cost averaging beats a lump sum.</dd>
+            <dt>{{ t('landing.find') }}</dt>
+            <dd>{{ t('landing.findBody') }}</dd>
           </div>
           <div class="p-row p-solution">
-            <dt id="feature-heading">Solution</dt>
+            <dt id="feature-heading">{{ t('landing.solution') }}</dt>
             <dd>
               <ol class="steps" aria-labelledby="feature-heading">
                 <li>
-                  <h3><Wallet aria-hidden="true" />Portfolio Tracking</h3>
-                  <p>FIFO cost basis with deterministic holdings reconciliation and IndexedDB persistence.</p>
+                  <h3><Wallet aria-hidden="true" />{{ t('landing.stepPortfolioTitle') }}</h3>
+                  <p>{{ t('landing.stepPortfolioBody') }}</p>
                 </li>
                 <li>
-                  <h3><FlaskConical aria-hidden="true" />DCA Backtesting</h3>
-                  <p>10k+ OHLCV candles powered by dedicated Web Workers for smooth simulations.</p>
+                  <h3><FlaskConical aria-hidden="true" />{{ t('landing.stepBacktestTitle') }}</h3>
+                  <p>{{ t('landing.stepBacktestBody') }}</p>
                 </li>
                 <li>
-                  <h3><Activity aria-hidden="true" />Risk Metrics</h3>
-                  <p>Sharpe ratio, max drawdown, and volatility calculated off-thread for reliability.</p>
+                  <h3><Activity aria-hidden="true" />{{ t('landing.stepRiskTitle') }}</h3>
+                  <p>{{ t('landing.stepRiskBody') }}</p>
                 </li>
                 <li>
-                  <h3><Cable aria-hidden="true" />OpenAPI Contract</h3>
-                  <p>Swagger-backed playground with mock/live toggle and RBAC-aware handlers.</p>
+                  <h3><Cable aria-hidden="true" />{{ t('landing.stepApiTitle') }}</h3>
+                  <p>{{ t('landing.stepApiBody') }}</p>
                 </li>
               </ol>
             </dd>
           </div>
           <div class="p-row p-answer">
-            <dt>Answer</dt>
+            <dt>{{ t('landing.answer') }}</dt>
             <dd>
               <button type="button" class="answer answer-btn" :disabled="isOpening" @click="openDemo">
-                Open the demo portfolio
+                {{ t('landing.openDemo') }}
                 <ArrowRight aria-hidden="true" />
               </button>
             </dd>
@@ -113,17 +113,15 @@
 
       <section class="mode-switcher" aria-labelledby="mode-heading">
         <div class="block-head">
-          <h2 id="mode-heading">Backend Mode</h2>
-          <p>Switch between a deterministic mock API and a live Spring Boot backend deployment.</p>
+          <h2 id="mode-heading">{{ t('landing.backendMode') }}</h2>
+          <p>{{ t('landing.backendModeBody') }}</p>
         </div>
         <div v-if="configStore.isDemoOnly" class="mode-body">
-          <p class="mode-hint">
-            이 공개 데모는 브라우저에 저장된 2024년 샘플 데이터(Mock)로만 동작합니다. 실제 시세·계좌와 연결되지 않으며 Live 백엔드 연결은 꺼져 있습니다.
-          </p>
+          <p class="mode-hint">{{ t('landing.demoOnlyHint') }}</p>
         </div>
         <div v-else class="mode-body">
-          <div class="mode-actions" role="group" aria-label="Backend mode">
-            <button type="button" class="seg" :aria-pressed="isMockMode" @click="activateMockMode">Mock</button>
+          <div class="mode-actions" role="group" :aria-label="t('landing.modeGroup')">
+            <button type="button" class="seg" :aria-pressed="isMockMode" @click="activateMockMode">{{ t('nav.mock') }}</button>
             <button
               type="button"
               class="seg"
@@ -131,21 +129,21 @@
               :disabled="!backendUrl"
               @click="activateLiveMode"
             >
-              Live (Connect)
+              {{ t('landing.liveConnect') }}
             </button>
           </div>
           <div class="field mode-url">
-            <label for="landing-backend-url">Live URL</label>
+            <label for="landing-backend-url">{{ t('landing.liveUrl') }}</label>
             <input id="landing-backend-url" v-model="backendUrl" type="url" placeholder="https://finlab-api.fly.dev" />
           </div>
-          <p class="mode-hint">Mock 모드는 오프라인에서도 완전하게 동작합니다.</p>
+          <p class="mode-hint">{{ t('landing.mockHint') }}</p>
         </div>
       </section>
 
       <footer class="disclaimer">
         <p>
-          Educational simulation. No real money. Java backend optional.
-          <router-link to="/docs" class="footer-link">(deploy guide)</router-link>
+          {{ t('landing.footer') }}
+          <router-link to="/docs" class="footer-link">{{ t('landing.deployGuide') }}</router-link>
         </p>
       </footer>
     </div>
@@ -155,6 +153,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import {
   LayoutDashboard,
   Braces,
@@ -169,9 +168,12 @@ import { useConfigStore } from '@/stores/configStore'
 import { useAuthStore } from '@/stores/authStore'
 import { useToast } from '@/composables/useToast'
 import { DEMO_EMAIL } from '@/utils/seedLoader'
+import { localizeError } from '@/utils/localizedMessages'
+import LocaleSelect from '@/components/common/LocaleSelect.vue'
 
 // Landing page - 프로젝트 소개 및 CTA
 const router = useRouter()
+const { t } = useI18n()
 const configStore = useConfigStore()
 const authStore = useAuthStore()
 const toast = useToast()
@@ -194,7 +196,7 @@ async function openDemo() {
     const ok = await authStore.login(DEMO_EMAIL)
     isOpening.value = false
     if (!ok) {
-      toast.error(authStore.error ?? '데모 로그인에 실패했습니다.')
+      toast.error(authStore.error ? localizeError(authStore.error) : t('landing.demoLoginFailed'))
       router.push('/login')
       return
     }
@@ -204,16 +206,16 @@ async function openDemo() {
 
 function activateMockMode() {
   configStore.setBackendMode('mock')
-  toast.info('Mock API 모드로 전환했습니다.')
+  toast.info(t('nav.mockModeEnabled'))
 }
 
 function activateLiveMode() {
   if (!backendUrl.value) {
-    toast.warning('라이브 백엔드 URL을 입력한 뒤 다시 시도하세요.')
+    toast.warning(t('landing.liveUrlRetry'))
     return
   }
   configStore.setBackendMode('live')
-  toast.success('Live API 모드 연결을 시도합니다.')
+  toast.success(t('landing.liveConnecting'))
 }
 </script>
 
@@ -276,6 +278,12 @@ function activateLiveMode() {
 
 .cb-links {
   flex-direction: row;
+  align-items: center;
+  gap: var(--space-5);
+}
+
+.cb-nav {
+  display: flex;
   align-items: center;
   gap: var(--space-5);
 }
@@ -566,6 +574,13 @@ function activateLiveMode() {
     border-left: 0 !important;
     border-top: 1.5px solid var(--rule-strong);
     justify-content: space-between;
+    flex-wrap: wrap;
+    row-gap: var(--space-1);
+  }
+
+  .cb-nav {
+    flex-wrap: wrap;
+    column-gap: var(--space-4);
   }
 
   .hero {

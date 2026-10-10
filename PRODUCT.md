@@ -25,7 +25,7 @@ Runs entirely in the browser (IndexedDB + Web Workers) behind the same contract 
 
 - Mock mode is the default and works offline; Live mode needs a backend URL (default placeholder `https://finlab-api.fly.dev`, not verified to be running).
 - Login is mock: any email, no password; `demo@finlab.app` is the demo account.
-- UI language defaults to Korean with an English toggle; several page strings are still English-only.
+- UI language defaults to Korean with an English toggle (nav settings, plus a compact selector on landing and login); app-authored copy is translated in both. Stored user data and OpenAPI/technical identifiers stay as written.
 - Deployed on Vercel as a static SPA (`vercel.json`), built from `frontend/`.
 
 ## Capabilities and Constraints
