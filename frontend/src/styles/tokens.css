@@ -15,13 +15,14 @@
   --binding-ink: #e5eed8;
   --binding-muted: #a9bb9d;
 
-  --grid-minor: rgb(62 104 70 / 0.10);
-  --grid-major: rgb(62 104 70 / 0.20);
+  /* faint enough that copy crossing a line keeps its contrast */
+  --grid-minor: rgb(62 104 70 / 0.035);
+  --grid-major: rgb(62 104 70 / 0.07);
   --grid-size: 20px;
 
   --ink: #1b221e;              /* graphite, primary text */
   --ink-2: #435047;            /* secondary text */
-  --ink-3: #56645a;            /* tertiary, placeholders (>=4.5:1 on paper) */
+  --ink-3: #4d5b51;            /* tertiary, placeholders (>=4.5:1 even where grid lines cross) */
   --rule: #9fb391;             /* printed ruling */
   --rule-strong: #1b221e;      /* inked rule */
 
@@ -36,8 +37,10 @@
   --font-figure: 'Azeret Mono', ui-monospace, 'SF Mono', Menlo, monospace;
   --font-body: system-ui, -apple-system, 'Apple SD Gothic Neo', 'Noto Sans KR', 'Segoe UI', sans-serif;
 
-  --text-xs: 0.75rem;
-  --text-sm: 0.875rem;
+  /* reading floor: xs (14px) is for short keys, chips and table heads only;
+     sm carries helper prose and captions at full body size */
+  --text-xs: 0.875rem;
+  --text-sm: 1rem;
   --text-base: 1rem;
   --text-lg: 1.125rem;
   --text-xl: 1.375rem;
@@ -45,7 +48,7 @@
   --text-3xl: clamp(2rem, 1.4rem + 2vw, 2.75rem);
   --text-display: clamp(3.5rem, 2rem + 6vw, 6rem);
 
-  --tracking-label: 0.08em;
+  --tracking-label: 0.04em;
 
   /* ========== Space (multiples of the 4px pencil step; grid cell = 20px) ========== */
   --space-1: 0.25rem;
@@ -140,12 +143,12 @@
     --binding-ink: #eaf2fb;
     --binding-muted: #9db6d3;
 
-    --grid-minor: rgb(234 242 251 / 0.07);
-    --grid-major: rgb(234 242 251 / 0.14);
+    --grid-minor: rgb(234 242 251 / 0.03);
+    --grid-major: rgb(234 242 251 / 0.06);
 
     --ink: #f1f6fc;
     --ink-2: #c3d4e8;
-    --ink-3: #a3bad5;
+    --ink-3: #b2c6de;
     --rule: rgb(234 242 251 / 0.32);
     --rule-strong: #f1f6fc;
 

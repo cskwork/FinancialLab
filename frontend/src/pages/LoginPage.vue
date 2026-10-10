@@ -115,10 +115,7 @@ onMounted(() => {
   min-height: 44px;
   width: min(420px, 100%);
   color: var(--ink);
-  font-family: var(--font-label);
   font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
   text-decoration: none;
 }
 

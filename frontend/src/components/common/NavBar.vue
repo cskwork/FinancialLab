@@ -298,11 +298,8 @@ onBeforeUnmount(() => {
   margin-bottom: -3px;
   color: var(--binding-muted);
   text-decoration: none;
-  font-family: var(--font-label);
-  font-size: 1.0625rem;
+  font-size: var(--text-base);
   font-weight: 600;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
   border: 1.5px solid transparent;
   border-bottom: 0;
   transition: color var(--dur-fast) var(--ease-out), background-color var(--dur-fast) var(--ease-out);
@@ -310,8 +307,7 @@ onBeforeUnmount(() => {
 }
 
 .sheet-no {
-  font-size: 0.75rem;
-  opacity: 0.8;
+  font-size: var(--text-xs);
 }
 
 .sheet-tab:hover {
@@ -333,7 +329,7 @@ onBeforeUnmount(() => {
   display: inline-flex;
   align-items: center;
   color: var(--binding-muted);
-  font-size: var(--text-sm);
+  font-size: var(--text-base);
   text-decoration: none;
   white-space: nowrap;
 }
@@ -362,10 +358,10 @@ onBeforeUnmount(() => {
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
-  min-height: 40px;
+  min-height: 44px;
   padding: 0 var(--space-3);
   color: var(--binding-ink);
-  font-size: var(--text-sm);
+  font-size: var(--text-base);
   cursor: pointer;
   border: 1px solid color-mix(in srgb, var(--binding-ink) 30%, transparent);
   white-space: nowrap;
@@ -420,13 +416,14 @@ onBeforeUnmount(() => {
 
 .hint {
   margin: 0;
-  font-size: var(--text-xs);
+  font-size: var(--text-sm);
+  line-height: 1.5;
   color: var(--ink-2);
 }
 
 .user-email {
   max-width: 14rem;
-  font-size: var(--text-sm);
+  font-size: var(--text-xs);
   color: var(--binding-muted);
 }
 
@@ -434,14 +431,11 @@ onBeforeUnmount(() => {
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
-  min-height: 40px;
+  min-height: 44px;
   padding: 0 var(--space-3);
   color: var(--binding-ink);
-  font-family: var(--font-label);
   font-size: var(--text-base);
   font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
   text-decoration: none;
   white-space: nowrap;
   border: 1px solid color-mix(in srgb, var(--binding-ink) 30%, transparent);
@@ -457,13 +451,15 @@ onBeforeUnmount(() => {
   outline-color: var(--highlight);
 }
 
-@media (max-width: 1100px) {
+/* the unfolded strip is capped at --page-max and has no room left for the address */
+@media (min-width: 1321px) {
   .user-email {
     display: none;
   }
 }
 
-@media (max-width: 960px) {
+/* the full English strip needs ~1270px, so fold anywhere the page is narrower than --page-max */
+@media (max-width: 1320px) {
   .binding-inner {
     flex-wrap: wrap;
     padding: 0 var(--space-4);
@@ -479,10 +475,7 @@ onBeforeUnmount(() => {
     min-height: 44px;
     padding: 0 var(--space-3);
     color: var(--binding-ink);
-    font-family: var(--font-label);
     font-weight: 600;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
     border: 1px solid color-mix(in srgb, var(--binding-ink) 30%, transparent);
   }
 

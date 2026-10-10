@@ -540,10 +540,7 @@ onMounted(() => {
   gap: var(--space-2);
   min-height: 44px;
   padding: 0 var(--space-4);
-  font-family: var(--font-label);
   font-weight: 600;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
   color: var(--ink);
 }
 
@@ -562,7 +559,6 @@ onMounted(() => {
 
 .seg-count {
   font-size: var(--text-xs);
-  opacity: 0.8;
 }
 
 .filter-status {
@@ -575,7 +571,7 @@ onMounted(() => {
 }
 
 .transactions-table td {
-  font-size: var(--text-sm);
+  font-size: var(--text-xs);
 }
 
 .tx-date {

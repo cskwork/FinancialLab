@@ -60,7 +60,7 @@ withDefaults(
   font-weight: 600;
   letter-spacing: var(--tracking-label);
   text-transform: uppercase;
-  color: var(--ink-3);
+  color: var(--ink-2);
   margin-bottom: var(--space-1);
 }
 
@@ -70,9 +70,10 @@ withDefaults(
 }
 
 .tb-sub {
-  margin: var(--space-2) 0 0;
+  margin: var(--space-3) 0 0;
   color: var(--ink-2);
   font-size: var(--text-sm);
+  line-height: 1.5;
 }
 
 .tb-sheet {

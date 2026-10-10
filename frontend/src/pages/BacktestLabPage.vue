@@ -373,7 +373,8 @@ onMounted(() => {
 }
 
 .range-note {
-  font-size: var(--text-xs);
+  font-size: var(--text-sm);
+  line-height: 1.5;
   color: var(--ink-2);
 }
 

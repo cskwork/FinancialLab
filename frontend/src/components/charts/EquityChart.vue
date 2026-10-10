@@ -302,7 +302,8 @@ onBeforeUnmount(() => observer?.disconnect())
 }
 
 .gridline {
-  stroke: var(--grid-major);
+  /* the page grid is now faint; the plot keeps its own readable ruling */
+  stroke: color-mix(in srgb, var(--rule) 55%, transparent);
   stroke-width: 1;
 }
 
@@ -314,7 +315,7 @@ onBeforeUnmount(() => observer?.disconnect())
 .tick-label {
   fill: var(--ink-2);
   font-family: var(--font-figure);
-  font-size: 11px;
+  font-size: 12px;
 }
 
 .line {
@@ -373,8 +374,8 @@ onBeforeUnmount(() => observer?.disconnect())
 }
 
 .caption {
-  margin-top: var(--space-2);
-  font-size: var(--text-xs);
+  margin-top: var(--space-3);
+  font-size: var(--text-sm);
   color: var(--ink-2);
 }
 </style>

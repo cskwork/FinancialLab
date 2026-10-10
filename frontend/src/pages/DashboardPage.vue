@@ -490,7 +490,7 @@ onMounted(() => {
   font-family: var(--font-label);
   font-size: var(--text-lg);
   font-weight: 700;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.02em;
   text-transform: none;
   color: var(--ink);
   border-bottom: 1px solid var(--rule);
@@ -523,10 +523,7 @@ onMounted(() => {
 }
 
 .link-view-all {
-  font-family: var(--font-label);
   font-weight: 600;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
 }
 
 .tx-lines {
@@ -571,7 +568,7 @@ onMounted(() => {
 
 .tx-date {
   color: var(--ink-2);
-  font-size: var(--text-sm);
+  font-size: var(--text-xs);
   text-align: right;
 }
 

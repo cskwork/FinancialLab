@@ -254,7 +254,7 @@ function activateLiveMode() {
   font-weight: 600;
   letter-spacing: var(--tracking-label);
   text-transform: uppercase;
-  color: var(--ink-3);
+  color: var(--ink-2);
 }
 
 .cb-brand {
@@ -281,14 +281,11 @@ function activateLiveMode() {
 }
 
 .cb-links a {
-  font-family: var(--font-label);
   font-weight: 600;
   font-size: var(--text-base);
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
   color: var(--ink);
   text-decoration: none;
-  min-height: 40px;
+  min-height: 44px;
   display: inline-flex;
   align-items: center;
 }
@@ -342,7 +339,9 @@ function activateLiveMode() {
 
 .demo-note {
   margin: 0;
+  max-width: 44ch;
   font-size: var(--text-sm);
+  line-height: 1.6;
   color: var(--ink-2);
 }
 
@@ -358,8 +357,8 @@ function activateLiveMode() {
 }
 
 .hero-plate figcaption {
-  margin-top: var(--space-3);
-  font-size: var(--text-xs);
+  margin-top: var(--space-4);
+  font-size: var(--text-sm);
   color: var(--ink-2);
 }
 
@@ -409,9 +408,9 @@ function activateLiveMode() {
   content: '(' counter(step, lower-alpha) ')';
   position: absolute;
   left: 0;
-  top: 0.1em;
+  top: 0.15em;
   font-family: var(--font-figure);
-  font-size: var(--text-sm);
+  font-size: var(--text-xs);
   color: var(--ink-2);
 }
 
@@ -434,6 +433,7 @@ function activateLiveMode() {
 .steps p {
   margin: 0;
   font-size: var(--text-base);
+  line-height: 1.6;
   color: var(--ink-2);
 }
 
@@ -493,11 +493,8 @@ function activateLiveMode() {
 .seg {
   min-height: 44px;
   padding: 0 var(--space-5);
-  font-family: var(--font-label);
   font-weight: 600;
   font-size: var(--text-base);
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
   color: var(--ink);
 }
 
@@ -518,6 +515,7 @@ function activateLiveMode() {
 .mode-hint {
   margin: 0 0 var(--space-3);
   font-size: var(--text-sm);
+  line-height: 1.6;
   color: var(--ink-2);
 }
 

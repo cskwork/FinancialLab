@@ -124,10 +124,7 @@ function handleAction(toast: ToastMessage) {
 }
 
 .toast-action {
-  font-family: var(--font-label);
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
   text-decoration: underline;
 }
 
