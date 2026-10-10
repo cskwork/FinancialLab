@@ -10,7 +10,8 @@
     "cancel": "Cancel",
     "confirm": "Confirm",
     "close": "Close",
-    "disclaimer": "Educational simulation. No real money."
+    "disclaimer": "Educational simulation. No real money.",
+    "skipToContent": "Skip to content"
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -33,7 +34,8 @@
     "menu": "Menu",
     "apiPlayground": "API Playground",
     "docs": "Docs",
-    "settings": "Settings"
+    "settings": "Settings",
+    "demoOnlyHint": "This public demo build runs only on sample data stored in your browser (Mock). Live backend connections are disabled on this site."
   },
   "login": {
     "title": "FinLab",
@@ -73,7 +75,18 @@
     "pleaseLogin": "Please login to view your portfolio",
     "goToLogin": "Go to Login",
     "weight": "Weight",
-    "sharesUnit": "shares"
+    "sharesUnit": "shares",
+    "sampleNotice": "Local demo · Based on 2024 sample prices. Not live quotes or account balances.",
+    "retry": "Retry loading",
+    "tableHint": "Scroll horizontally to see every column. Average cost excludes fees.",
+    "emptyPortfolio": "“{name}” has no transactions yet. Holdings, total value and risk metrics are calculated once transactions are recorded.",
+    "viewSamplePortfolio": "View sample portfolio",
+    "openingSample": "Opening sample portfolio...",
+    "sampleHint": "Opens example transactions priced with 2024 sample data as a separate portfolio. Your current portfolio is not changed.",
+    "sampleHintSwitch": "Switches to the demo account ({email}) to open the sample portfolio. Your current account’s records stay in this browser.",
+    "addTransaction": "Add a transaction yourself",
+    "sampleAutoSelected": "The selected portfolio has no transactions, so the sample portfolio is shown. You can switch at any time from the list above.",
+    "sampleLoadFailed": "Could not open the sample portfolio. Your existing records are unchanged. Please try again."
   },
   "transactions": {
     "buy": "BUY",

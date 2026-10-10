@@ -60,33 +60,36 @@
                   <option value="en">{{ t('nav.english') }}</option>
                 </select>
               </div>
-              <div class="field">
-                <label for="backend-mode">{{ t('nav.backend') }}</label>
-                <select id="backend-mode" v-model="backendMode" aria-describedby="backend-mode-hint">
-                  <option value="mock">{{ t('nav.mock') }}</option>
-                  <option value="live">{{ t('nav.live') }}</option>
-                </select>
-              </div>
-              <div class="field">
-                <label for="backend-url">{{ t('nav.backendUrl') }}</label>
-                <input
-                  id="backend-url"
-                  v-model="backendUrl"
-                  type="url"
+              <p v-if="configStore.isDemoOnly" class="hint">{{ t('nav.demoOnlyHint') }}</p>
+              <template v-else>
+                <div class="field">
+                  <label for="backend-mode">{{ t('nav.backend') }}</label>
+                  <select id="backend-mode" v-model="backendMode" aria-describedby="backend-mode-hint">
+                    <option value="mock">{{ t('nav.mock') }}</option>
+                    <option value="live">{{ t('nav.live') }}</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="backend-url">{{ t('nav.backendUrl') }}</label>
+                  <input
+                    id="backend-url"
+                    v-model="backendUrl"
+                    type="url"
+                    :disabled="backendMode === 'mock'"
+                    placeholder="https://finlab-api.fly.dev"
+                  />
+                </div>
+                <button
+                  type="button"
+                  class="btn btn--sm"
                   :disabled="backendMode === 'mock'"
-                  placeholder="https://finlab-api.fly.dev"
-                />
-              </div>
-              <button
-                type="button"
-                class="btn btn--sm"
-                :disabled="backendMode === 'mock'"
-                @click="handleConnectLive"
-              >
-                <PlugZap aria-hidden="true" />
-                {{ t('common.connect') }}
-              </button>
-              <p id="backend-mode-hint" class="hint">{{ t('nav.backendHint') }}</p>
+                  @click="handleConnectLive"
+                >
+                  <PlugZap aria-hidden="true" />
+                  {{ t('common.connect') }}
+                </button>
+                <p id="backend-mode-hint" class="hint">{{ t('nav.backendHint') }}</p>
+              </template>
             </div>
           </details>
 

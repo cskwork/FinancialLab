@@ -10,7 +10,8 @@
     "cancel": "취소",
     "confirm": "확인",
     "close": "닫기",
-    "disclaimer": "교육용 시뮬레이션입니다. 실제 돈은 사용되지 않습니다."
+    "disclaimer": "교육용 시뮬레이션입니다. 실제 돈은 사용되지 않습니다.",
+    "skipToContent": "본문으로 이동"
   },
   "nav": {
     "dashboard": "대시보드",
@@ -33,7 +34,8 @@
     "menu": "메뉴",
     "apiPlayground": "API 플레이그라운드",
     "docs": "문서",
-    "settings": "설정"
+    "settings": "설정",
+    "demoOnlyHint": "공개 데모 빌드는 브라우저에 저장된 샘플 데이터(Mock)로만 동작합니다. Live 백엔드 연결은 이 사이트에서 꺼져 있습니다."
   },
   "login": {
     "title": "FinLab",
@@ -73,7 +75,18 @@
     "pleaseLogin": "포트폴리오를 보려면 로그인하세요",
     "goToLogin": "로그인하러 가기",
     "weight": "비중",
-    "sharesUnit": "주"
+    "sharesUnit": "주",
+    "sampleNotice": "로컬 데모 · 2024년 샘플 가격 기준입니다. 실제 시세·계좌 잔액이 아닙니다.",
+    "retry": "다시 불러오기",
+    "tableHint": "표를 좌우로 밀면 모든 항목을 확인할 수 있습니다. 평균 단가는 수수료를 제외합니다.",
+    "emptyPortfolio": "‘{name}’에는 아직 거래가 없습니다. 보유 자산, 총 가치, 위험 지표는 거래가 기록되어야 계산됩니다.",
+    "viewSamplePortfolio": "예시 포트폴리오 보기",
+    "openingSample": "예시 포트폴리오를 여는 중...",
+    "sampleHint": "2024년 샘플 가격으로 만든 예시 거래를 별도 포트폴리오로 엽니다. 지금 포트폴리오의 기록은 바꾸지 않습니다.",
+    "sampleHintSwitch": "데모 계정({email})으로 전환해 예시 포트폴리오를 엽니다. 지금 계정의 기록은 이 브라우저에 그대로 남습니다.",
+    "addTransaction": "거래 직접 추가하기",
+    "sampleAutoSelected": "선택된 포트폴리오에 거래가 없어 예시 포트폴리오를 표시합니다. 위 목록에서 언제든 바꿀 수 있습니다.",
+    "sampleLoadFailed": "예시 포트폴리오를 열지 못했습니다. 기존 기록은 그대로입니다. 다시 시도하세요."
   },
   "transactions": {
     "buy": "매수",

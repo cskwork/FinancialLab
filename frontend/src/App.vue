@@ -1,7 +1,8 @@
 <template>
   <div id="app">
+    <a href="#main" class="skip-link">{{ t('common.skipToContent') }}</a>
     <NavBar v-if="shouldShowNav" />
-    <main id="main" class="app-main">
+    <main id="main" class="app-main" tabindex="-1">
       <ErrorBoundary>
         <RouterView />
       </ErrorBoundary>

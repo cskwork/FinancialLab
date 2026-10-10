@@ -116,7 +116,12 @@
           <h2 id="mode-heading">Backend Mode</h2>
           <p>Switch between a deterministic mock API and a live Spring Boot backend deployment.</p>
         </div>
-        <div class="mode-body">
+        <div v-if="configStore.isDemoOnly" class="mode-body">
+          <p class="mode-hint">
+            이 공개 데모는 브라우저에 저장된 2024년 샘플 데이터(Mock)로만 동작합니다. 실제 시세·계좌와 연결되지 않으며 Live 백엔드 연결은 꺼져 있습니다.
+          </p>
+        </div>
+        <div v-else class="mode-body">
           <div class="mode-actions" role="group" aria-label="Backend mode">
             <button type="button" class="seg" :aria-pressed="isMockMode" @click="activateMockMode">Mock</button>
             <button
