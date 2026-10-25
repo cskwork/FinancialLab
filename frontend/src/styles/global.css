@@ -52,9 +52,21 @@ h1, h2, h3, h4, h5, h6 {
   color: var(--ink);
   font-family: var(--font-label);
   font-weight: 600;
-  line-height: 1.1;
+  line-height: 1.2;
   letter-spacing: 0.01em;
   text-wrap: balance;
+}
+
+:lang(ko) h1,
+:lang(ko) h2,
+:lang(ko) h3,
+:lang(ko) h4,
+:lang(ko) h5,
+:lang(ko) h6 {
+  font-family: var(--font-body);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1.3;
 }
 
 h1 { font-size: var(--text-3xl); text-transform: uppercase; }
@@ -379,8 +391,18 @@ button {
   padding: var(--space-8) var(--space-6) var(--space-20);
 }
 
-.block + .block {
-  margin-top: var(--space-12);
+.block,
+.panel {
+  background-color: var(--paper-raised);
+  border: 1.5px solid var(--rule);
+  padding: var(--space-6);
+  position: relative;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.03);
+}
+
+.block + .block,
+.panel + .panel {
+  margin-top: var(--space-8);
 }
 
 .block-head {
@@ -392,6 +414,48 @@ button {
   padding-bottom: var(--space-3);
   margin-bottom: var(--space-5);
   border-bottom: 2px solid var(--rule-strong);
+}
+
+/* Beginner guidance banner & badges */
+.beginner-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background-color: color-mix(in srgb, var(--highlight) 20%, var(--paper-raised));
+  border-left: 3px solid var(--ink);
+  margin-bottom: var(--space-5);
+  font-size: var(--text-sm);
+  line-height: 1.55;
+  color: var(--ink);
+}
+
+.badge-status {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 6px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  line-height: 1.3;
+  border: 1px solid currentColor;
+  margin-left: var(--space-2);
+  vertical-align: middle;
+  border-radius: 2px;
+}
+
+.badge-status--good {
+  color: var(--ink);
+  background-color: color-mix(in srgb, var(--highlight) 45%, transparent);
+}
+
+.badge-status--neutral {
+  color: var(--ink-2);
+  background-color: var(--paper-sunk);
+}
+
+.badge-status--warn {
+  color: var(--red-pencil);
+  background-color: color-mix(in srgb, var(--red-pencil) 12%, transparent);
 }
 
 .block-head p {

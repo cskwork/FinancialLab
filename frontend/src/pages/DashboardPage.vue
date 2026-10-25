@@ -70,6 +70,10 @@
       </EmptySheet>
 
       <template v-else>
+        <aside class="beginner-banner" role="note">
+          <p>{{ t('dashboard.beginnerNotice') }}</p>
+        </aside>
+
         <div class="dash-grid">
           <!-- Summary: the working, with the answer boxed -->
           <section class="block summary-section" aria-labelledby="summary-heading">
@@ -77,14 +81,20 @@
               <h2 id="summary-heading">{{ t('dashboard.summary') }}</h2>
             </div>
             <div class="total">
-              <span class="label">{{ t('dashboard.totalValue') }}</span>
+              <span class="label">
+                {{ t('dashboard.totalValue') }}
+                <HelpTooltip :text="t('terms.marketValue')" :term="t('dashboard.totalValue')" />
+              </span>
               <span class="total-value fig">
                 <span class="answer">{{ portfolioMetrics ? formatUsd(portfolioMetrics.totalValue, locale) : '--' }}</span>
               </span>
             </div>
             <dl class="calc">
               <div class="calc-row">
-                <dt>{{ t('dashboard.dailyPnL') }}</dt>
+                <dt>
+                  {{ t('dashboard.dailyPnL') }}
+                  <HelpTooltip :text="t('terms.dailyPnL')" :term="t('dashboard.dailyPnL')" />
+                </dt>
                 <dd
                   class="fig"
                   :class="{ positive: (portfolioMetrics?.pnlDaily ?? 0) > 0, negative: (portfolioMetrics?.pnlDaily ?? 0) < 0 }"
@@ -93,12 +103,28 @@
                 </dd>
               </div>
               <div class="calc-row">
-                <dt>{{ t('dashboard.sharpeRatio') }}</dt>
-                <dd class="fig">{{ portfolioMetrics ? formatNumber(portfolioMetrics.sharpe, locale) : '--' }}</dd>
+                <dt>
+                  {{ t('dashboard.sharpeRatio') }}
+                  <HelpTooltip :text="t('terms.sharpe')" :term="t('dashboard.sharpeRatio')" :tip="t('terms.sharpeTip')" />
+                </dt>
+                <dd class="fig">
+                  {{ portfolioMetrics ? formatNumber(portfolioMetrics.sharpe, locale) : '--' }}
+                  <span v-if="portfolioMetrics && getSharpeBadge(portfolioMetrics.sharpe)" :class="['badge-status', getSharpeBadge(portfolioMetrics.sharpe)!.class]">
+                    {{ getSharpeBadge(portfolioMetrics.sharpe)!.label }}
+                  </span>
+                </dd>
               </div>
               <div class="calc-row">
-                <dt>{{ t('dashboard.volatility') }}</dt>
-                <dd class="fig">{{ portfolioMetrics ? `${formatNumber(portfolioMetrics.volatility, locale)}%` : '--' }}</dd>
+                <dt>
+                  {{ t('dashboard.volatility') }}
+                  <HelpTooltip :text="t('terms.volatility')" :term="t('dashboard.volatility')" :tip="t('terms.volatilityTip')" />
+                </dt>
+                <dd class="fig">
+                  {{ portfolioMetrics ? `${formatNumber(portfolioMetrics.volatility, locale)}%` : '--' }}
+                  <span v-if="portfolioMetrics && getVolatilityBadge(portfolioMetrics.volatility)" :class="['badge-status', getVolatilityBadge(portfolioMetrics.volatility)!.class]">
+                    {{ getVolatilityBadge(portfolioMetrics.volatility)!.label }}
+                  </span>
+                </dd>
               </div>
               <div class="calc-row">
                 <dt>{{ t('dashboard.totalHoldings') }}</dt>
@@ -118,7 +144,10 @@
           <!-- Holdings ledger -->
           <section class="block holdings-section" aria-labelledby="holdings-heading">
             <div class="block-head">
-              <h2 id="holdings-heading">{{ t('dashboard.currentHoldings') }}</h2>
+              <h2 id="holdings-heading">
+                {{ t('dashboard.currentHoldings') }}
+                <HelpTooltip :text="t('terms.fifo')" term="FIFO" :tip="t('terms.fifoTip')" />
+              </h2>
             </div>
             <EmptySheet v-if="holdings.length === 0" compact>{{ t('dashboard.noHoldings') }}</EmptySheet>
             <p v-if="holdings.length" class="table-hint">{{ t('dashboard.tableHint') }}</p>
@@ -134,10 +163,22 @@
                   <tr>
                     <th scope="col">{{ t('dashboard.symbol') }}</th>
                     <th scope="col" class="num">{{ t('dashboard.shares') }}</th>
-                    <th scope="col" class="num">{{ t('dashboard.avgCost') }}</th>
-                    <th scope="col" class="num">{{ t('dashboard.marketValue') }}</th>
-                    <th scope="col" class="num">{{ t('dashboard.weight') }}</th>
-                    <th scope="col" class="num">{{ t('dashboard.unrealizedPnL') }}</th>
+                    <th scope="col" class="num">
+                      {{ t('dashboard.avgCost') }}
+                      <HelpTooltip :text="t('terms.avgCost')" :term="t('dashboard.avgCost')" />
+                    </th>
+                    <th scope="col" class="num">
+                      {{ t('dashboard.marketValue') }}
+                      <HelpTooltip :text="t('terms.marketValue')" :term="t('dashboard.marketValue')" />
+                    </th>
+                    <th scope="col" class="num">
+                      {{ t('dashboard.weight') }}
+                      <HelpTooltip :text="t('terms.weight')" :term="t('dashboard.weight')" />
+                    </th>
+                    <th scope="col" class="num">
+                      {{ t('dashboard.unrealizedPnL') }}
+                      <HelpTooltip :text="t('terms.unrealizedPnL')" :term="t('dashboard.unrealizedPnL')" />
+                    </th>
                     <th scope="col">{{ t('dashboard.updated') }}</th>
                   </tr>
                 </thead>
@@ -211,6 +252,7 @@ import { useToast } from '@/composables/useToast'
 import TitleBlock from '@/components/pad/TitleBlock.vue'
 import EmptySheet from '@/components/pad/EmptySheet.vue'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
+import HelpTooltip from '@/components/common/HelpTooltip.vue'
 
 const router = useRouter()
 const { t, locale } = useI18n()
@@ -258,6 +300,20 @@ const loadError = computed(() => {
   const storeError = portfolioStore.error || transactionStore.error || analyticsError.value
   return storeError ? failureMessage('dashboard.loadFailed', storeError) : null
 })
+
+function getSharpeBadge(sharpe: number | undefined): { label: string; class: string } | null {
+  if (sharpe === undefined || Number.isNaN(sharpe)) return null
+  if (sharpe >= 2) return { label: t('badges.sharpeExcellent'), class: 'badge-status--good' }
+  if (sharpe >= 1) return { label: t('badges.sharpeGood'), class: 'badge-status--neutral' }
+  return { label: t('badges.sharpeFair'), class: 'badge-status--warn' }
+}
+
+function getVolatilityBadge(vol: number | undefined): { label: string; class: string } | null {
+  if (vol === undefined || Number.isNaN(vol)) return null
+  if (vol < 15) return { label: t('badges.volLow'), class: 'badge-status--good' }
+  if (vol <= 25) return { label: t('badges.volModerate'), class: 'badge-status--neutral' }
+  return { label: t('badges.volHigh'), class: 'badge-status--warn' }
+}
 
 // 선택한 포트폴리오의 거래와 지표 조회 (거래가 없으면 지표 계산을 건너뛴다)
 async function loadPortfolio(portfolioId: number) {

@@ -47,6 +47,10 @@
     </EmptySheet>
 
     <div v-else class="transactions-content">
+      <aside class="beginner-banner" role="note">
+        <p>{{ t('transactions.beginnerTip') }}</p>
+      </aside>
+
       <!-- New entry: the ledger's next blank line -->
       <section v-if="showAddForm" id="tx-entry" class="block entry" aria-labelledby="entry-heading">
         <div class="block-head">
