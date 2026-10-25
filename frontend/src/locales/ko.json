@@ -359,6 +359,8 @@
     "preset1Desc": "S&P 500 ETF를 매월 100달러씩 꾸준히 적립식 투자했을 때의 성과",
     "preset2Title": "AAPL 주 $50 분할 매수",
     "preset2Desc": "애플 주식을 매주 50달러씩 분할 매수했을 때의 변동성 완화 효과",
+    "preset3Title": "QQQ 월 $150 테크 적립",
+    "preset3Desc": "나스닥 100 ETF를 매월 150달러씩 적립하여 기술주 성장세를 추종하는 전략",
     "presetApply": "이 조건 적용",
     "given": "조건",
     "symbol": "심볼",

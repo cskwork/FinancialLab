@@ -13,7 +13,8 @@ import {
   HoldingResponseSchema,
   GoalResponseSchema,
   PlanResponseSchema,
-  MetricSnapshotResponseSchema
+  MetricSnapshotResponseSchema,
+  CandleResponseSchema
 } from './schemas'
 import type {
   LoginRequest,
@@ -29,7 +30,9 @@ import type {
   CreateGoalRequest,
   PlanResponse,
   CreatePlanRequest,
-  MetricSnapshotResponse
+  MetricSnapshotResponse,
+  CandleResponse,
+  MarketDataQuery
 } from './schemas'
 
 interface LiveRequestOptions<T> {
@@ -154,6 +157,7 @@ export interface ApiClientInterface {
   getPlans(portfolioId: number, token?: string | null): Promise<ApiResponse<PlanResponse[]>>
   createPlan(request: CreatePlanRequest, token?: string | null): Promise<ApiResponse<PlanResponse>>
   deletePlan(id: number, token?: string | null): Promise<ApiResponse<void>>
+  getMarketData(query: MarketDataQuery, token?: string | null): Promise<ApiResponse<CandleResponse[]>>
 }
 
 export const apiClient: ApiClientInterface = {
@@ -395,6 +399,25 @@ export const apiClient: ApiClientInterface = {
       method: 'DELETE',
       path: `/v1/plans/${id}`,
       token
+    })
+  },
+
+  async getMarketData(query, token) {
+    const config = useConfigStore()
+    if (config.isMockMode) {
+      return mockApiClient.getMarketData(query)
+    }
+
+    return liveRequest<CandleResponse[]>({
+      method: 'GET',
+      path: '/v1/market-data',
+      token,
+      query: {
+        symbol: query.symbol,
+        ...(query.startDate ? { startDate: query.startDate } : {}),
+        ...(query.endDate ? { endDate: query.endDate } : {})
+      },
+      schema: z.array(CandleResponseSchema)
     })
   }
 }
