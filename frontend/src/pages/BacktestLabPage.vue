@@ -4,6 +4,40 @@
       {{ t('backtest.subtitle') }}
     </TitleBlock>
 
+    <!-- Beginner Presets -->
+    <section class="block presets-section" aria-labelledby="presets-heading">
+      <div class="block-head">
+        <h2 id="presets-heading">{{ t('backtest.presetsTitle') }}</h2>
+        <p>{{ t('backtest.presetsDesc') }}</p>
+      </div>
+      <div class="presets-grid">
+        <button
+          type="button"
+          class="preset-card"
+          @click="applyPreset('SPY', 'MONTHLY', 100, 1000)"
+        >
+          <div class="preset-header">
+            <span class="preset-tag">SPY</span>
+            <strong class="preset-title">{{ t('backtest.preset1Title') }}</strong>
+          </div>
+          <p class="preset-desc">{{ t('backtest.preset1Desc') }}</p>
+          <span class="preset-action">{{ t('backtest.presetApply') }} →</span>
+        </button>
+        <button
+          type="button"
+          class="preset-card"
+          @click="applyPreset('AAPL', 'WEEKLY', 50, 1000)"
+        >
+          <div class="preset-header">
+            <span class="preset-tag">AAPL</span>
+            <strong class="preset-title">{{ t('backtest.preset2Title') }}</strong>
+          </div>
+          <p class="preset-desc">{{ t('backtest.preset2Desc') }}</p>
+          <span class="preset-action">{{ t('backtest.presetApply') }} →</span>
+        </button>
+      </div>
+    </section>
+
     <div class="lab-grid">
       <section class="block given" aria-labelledby="given-heading">
         <div class="block-head">
@@ -11,14 +45,20 @@
         </div>
         <form class="form-grid" novalidate @submit.prevent="runBacktest">
           <div class="field">
-            <label for="bt-symbol">{{ t('backtest.symbol') }}</label>
+            <label for="bt-symbol">
+              {{ t('backtest.symbol') }}
+              <HelpTooltip :text="t('terms.symbolSpy')" term="SPY" />
+            </label>
             <select id="bt-symbol" v-model="form.symbol" required @change="handleSymbolChange">
               <option v-if="symbols.length === 0" value="" disabled>{{ t('backtest.loadingData') }}</option>
               <option v-for="symbol in symbols" :key="symbol" :value="symbol">{{ symbol }}</option>
             </select>
           </div>
           <div class="field">
-            <label for="bt-interval">{{ t('backtest.interval') }}</label>
+            <label for="bt-interval">
+              {{ t('backtest.interval') }}
+              <HelpTooltip :text="t('terms.dca')" :term="t('backtest.interval')" :tip="t('terms.dcaTip')" />
+            </label>
             <select id="bt-interval" v-model="form.dcaInterval" required>
               <option value="WEEKLY">{{ t('backtest.weekly') }}</option>
               <option value="MONTHLY">{{ t('backtest.monthly') }}</option>
@@ -40,11 +80,17 @@
             />
           </div>
           <div class="field">
-            <label for="bt-capital">{{ t('backtest.initialCapital') }}</label>
+            <label for="bt-capital">
+              {{ t('backtest.initialCapital') }}
+              <HelpTooltip :text="t('terms.initialCapital')" :term="t('backtest.initialCapital')" />
+            </label>
             <input id="bt-capital" v-model.number="form.initialCapital" type="number" min="100" step="100" required />
           </div>
           <div class="field">
-            <label for="bt-dca">{{ t('backtest.dcaAmount') }}</label>
+            <label for="bt-dca">
+              {{ t('backtest.dcaAmount') }}
+              <HelpTooltip :text="t('terms.dcaAmount')" :term="t('backtest.dcaAmount')" />
+            </label>
             <input id="bt-dca" v-model.number="form.dcaAmount" type="number" min="1" step="50" required />
           </div>
           <p v-if="dateError" id="bt-date-error" class="form-error" role="alert">
@@ -77,9 +123,20 @@
             </p>
           </div>
 
+          <aside class="beginner-insight-note" role="note">
+            <strong class="insight-title">{{ t('backtest.beginnerNoteTitle') }}</strong>
+            <p class="insight-text">
+              {{ result.comparison.lumpSumWins ? t('backtest.insightLumpSum') : t('backtest.insightDca') }}
+            </p>
+          </aside>
+
           <div class="results-grid">
             <div class="result-group" :class="{ winner: !result.comparison.lumpSumWins }">
-              <h3><i class="key key-dca" aria-hidden="true"></i>{{ t('backtest.dcaStrategy') }}<Check v-if="!result.comparison.lumpSumWins" class="win-mark" aria-hidden="true" /></h3>
+              <h3>
+                <i class="key key-dca" aria-hidden="true"></i>{{ t('backtest.dcaStrategy') }}
+                <HelpTooltip :text="t('terms.dca')" :term="t('backtest.dcaStrategy')" :tip="t('terms.dcaTip')" />
+                <Check v-if="!result.comparison.lumpSumWins" class="win-mark" aria-hidden="true" />
+              </h3>
               <dl>
                 <div>
                   <dt>{{ t('backtest.totalInvested') }}</dt>
@@ -98,7 +155,11 @@
               </dl>
             </div>
             <div class="result-group" :class="{ winner: result.comparison.lumpSumWins }">
-              <h3><i class="key key-lump" aria-hidden="true"></i>{{ t('backtest.lumpSum') }}<Check v-if="result.comparison.lumpSumWins" class="win-mark" aria-hidden="true" /></h3>
+              <h3>
+                <i class="key key-lump" aria-hidden="true"></i>{{ t('backtest.lumpSum') }}
+                <HelpTooltip :text="t('terms.lumpSum')" :term="t('backtest.lumpSum')" :tip="t('terms.lumpSumTip')" />
+                <Check v-if="result.comparison.lumpSumWins" class="win-mark" aria-hidden="true" />
+              </h3>
               <dl>
                 <div>
                   <dt>{{ t('backtest.totalInvested') }}</dt>
@@ -146,6 +207,7 @@ import { useToast } from '@/composables/useToast'
 import TitleBlock from '@/components/pad/TitleBlock.vue'
 import EmptySheet from '@/components/pad/EmptySheet.vue'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
+import HelpTooltip from '@/components/common/HelpTooltip.vue'
 import EquityChart from '@/components/charts/EquityChart.vue'
 import { buildEquityCurves, type EquityPoint } from '@/utils/equityCurve'
 import { formatNumber, formatSessionDay, formatUsd } from '@/utils/localeFormat'
@@ -236,6 +298,21 @@ function handleSymbolChange() {
   updateDateRange()
   result.value = null
   curve.value = []
+}
+
+async function applyPreset(presetSymbol: string, interval: 'WEEKLY' | 'MONTHLY', dcaAmt: number, initCap: number) {
+  if (symbols.value.includes(presetSymbol)) {
+    form.symbol = presetSymbol
+  } else if (symbols.value.length > 0) {
+    form.symbol = symbols.value[0]!
+  }
+  form.dcaInterval = interval
+  form.dcaAmount = dcaAmt
+  form.initialCapital = initCap
+  await updateDateRange()
+  if (canRun.value) {
+    await runBacktest()
+  }
 }
 
 async function runBacktest() {
@@ -497,6 +574,99 @@ onMounted(() => {
 
 .key-lump {
   border-top-color: var(--series-2);
+}
+
+.presets-section {
+  margin-bottom: var(--space-8);
+}
+
+.presets-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: var(--space-4);
+}
+
+.preset-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+  padding: var(--space-4);
+  background-color: var(--paper-raised);
+  border: 1px solid var(--rule-strong);
+  cursor: pointer;
+  transition: all var(--dur-fast) var(--ease-out);
+}
+
+.preset-card:hover,
+.preset-card:focus-visible {
+  border-color: var(--ink);
+  background-color: color-mix(in srgb, var(--highlight) 15%, var(--paper-raised));
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+  outline: none;
+}
+
+.preset-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+
+.preset-tag {
+  font-family: var(--font-label);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  padding: 2px 6px;
+  background-color: var(--highlight);
+  color: var(--highlight-ink);
+  border-radius: 2px;
+}
+
+.preset-title {
+  font-family: var(--font-label);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.preset-desc {
+  margin: 0 0 var(--space-3);
+  font-size: var(--text-xs);
+  line-height: 1.45;
+  color: var(--ink-2);
+  flex-grow: 1;
+}
+
+.preset-action {
+  font-family: var(--font-label);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.beginner-insight-note {
+  padding: var(--space-4);
+  margin-bottom: var(--space-6);
+  background-color: color-mix(in srgb, var(--highlight) 18%, var(--paper-raised));
+  border-left: 3px solid var(--ink);
+}
+
+.insight-title {
+  display: block;
+  font-family: var(--font-label);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  margin-bottom: var(--space-2);
+  color: var(--ink);
+}
+
+.insight-text {
+  margin: 0;
+  font-size: var(--text-xs);
+  line-height: 1.55;
+  color: var(--ink);
 }
 
 @media (max-width: 1080px) {

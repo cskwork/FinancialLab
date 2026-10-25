@@ -45,7 +45,8 @@ withDefaults(
   grid-template-columns: minmax(0, 1fr) auto auto;
   border: 1.5px solid var(--rule-strong);
   margin-bottom: var(--space-10);
-  background-color: color-mix(in srgb, var(--paper) 80%, transparent);
+  background-color: var(--paper-raised);
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.03);
 }
 
 .tb-cell {
