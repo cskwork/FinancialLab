@@ -5,6 +5,8 @@
 
 import { createRouter, createWebHistory, type RouteLocationNormalizedLoaded, type RouteRecordRaw } from 'vue-router'
 import i18n from '@/i18n'
+import { useAuthStore } from '@/stores/authStore'
+import { whenSeedReady } from '@/utils/seedLoader'
 
 // 라우트 정의 (lazy loading)
 const routes: RouteRecordRaw[] = [
@@ -120,15 +122,12 @@ router.beforeEach(async (to) => {
 
   // 인증 체크
   if (to.meta.requiresAuth) {
-    // authStore를 동적으로 import하여 순환 의존성 방지
-    const { useAuthStore } = await import('@/stores/authStore')
     const authStore = useAuthStore()
     if (!authStore.isAuthenticated) {
       return { name: 'login', query: { redirect: to.fullPath } }
     }
 
     // 데모 데이터(캔들, 샘플 거래)가 준비된 뒤 화면을 연다
-    const { whenSeedReady } = await import('@/utils/seedLoader')
     await whenSeedReady()
   }
 

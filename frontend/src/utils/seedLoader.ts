@@ -121,11 +121,14 @@ function writeSeedFlag() {
 async function ensureCandles(): Promise<number> {
   if ((await db.candles.count()) > 0) return 0
 
-  const [aaplCandles, spyCandles] = await Promise.all([
+  const [aaplCandles, spyCandles, msftCandles, qqqCandles, nvdaCandles] = await Promise.all([
     loadOHLCVData('AAPL', '/data/ohlcv/AAPL.csv'),
-    loadOHLCVData('SPY', '/data/ohlcv/SPY.csv')
+    loadOHLCVData('SPY', '/data/ohlcv/SPY.csv'),
+    loadOHLCVData('MSFT', '/data/ohlcv/MSFT.csv'),
+    loadOHLCVData('QQQ', '/data/ohlcv/QQQ.csv'),
+    loadOHLCVData('NVDA', '/data/ohlcv/NVDA.csv')
   ])
-  const allCandles = [...aaplCandles, ...spyCandles]
+  const allCandles = [...aaplCandles, ...spyCandles, ...msftCandles, ...qqqCandles, ...nvdaCandles]
   return db.transaction('rw', db.candles, async () => {
     if ((await db.candles.count()) > 0) return 0
     await db.candles.bulkAdd(allCandles)

@@ -185,19 +185,19 @@
                 <tbody>
                   <tr v-for="holding in holdings" :key="holding.symbol">
                     <th scope="row" class="symbol">{{ holding.symbol }}</th>
-                    <td class="num">{{ formatNumber(holding.shares, locale) }}</td>
-                    <td class="num">{{ formatUsd(holding.avgCost, locale) }}</td>
-                    <td class="num">{{ formatUsd(holding.marketValue, locale) }}</td>
-                    <td class="num">
+                    <td :data-label="t('dashboard.shares')" class="num">{{ formatNumber(holding.shares, locale) }}</td>
+                    <td :data-label="t('dashboard.avgCost')" class="num">{{ formatUsd(holding.avgCost, locale) }}</td>
+                    <td :data-label="t('dashboard.marketValue')" class="num">{{ formatUsd(holding.marketValue, locale) }}</td>
+                    <td :data-label="t('dashboard.weight')" class="num">
                       <span class="weight">
                         <span class="weight-bar" :style="{ width: `${weightOf(holding.marketValue)}%` }"></span>
                         {{ formatNumber(weightOf(holding.marketValue), locale, 1) }}%
                       </span>
                     </td>
-                    <td class="num" :class="{ positive: holding.unrealizedPnL >= 0, negative: holding.unrealizedPnL < 0 }">
+                    <td :data-label="t('dashboard.unrealizedPnL')" class="num" :class="{ positive: holding.unrealizedPnL >= 0, negative: holding.unrealizedPnL < 0 }">
                       {{ formatSignedUsd(holding.unrealizedPnL, locale) }}
                     </td>
-                    <td class="updated">{{ formatDateTime(holding.lastUpdated, locale) }}</td>
+                    <td :data-label="t('dashboard.updated')" class="updated">{{ formatDateTime(holding.lastUpdated, locale) }}</td>
                   </tr>
                 </tbody>
               </table>
@@ -643,5 +643,65 @@ onMounted(() => {
   .tx-price { grid-area: price; }
   .tx-qty { grid-area: qty; text-align: left; }
   .tx-date { grid-area: date; }
+}
+
+@media (max-width: 680px) {
+  .table-hint {
+    display: none;
+  }
+
+  .holdings-table thead {
+    display: none;
+  }
+
+  .holdings-table,
+  .holdings-table tbody {
+    display: block;
+    width: 100%;
+  }
+
+  .holdings-table tr {
+    display: block;
+    border: 1px solid var(--rule-strong);
+    background-color: var(--paper-raised);
+    margin-bottom: var(--space-4);
+    padding: var(--space-3) var(--space-4);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  }
+
+  .holdings-table tr:hover {
+    background-color: var(--paper-raised);
+  }
+
+  .holdings-table th.symbol {
+    display: block;
+    font-size: var(--text-xl);
+    padding-bottom: var(--space-2);
+    margin-bottom: var(--space-2);
+    border-bottom: 2px solid var(--rule-strong);
+  }
+
+  .holdings-table td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-2) 0;
+    border-bottom: 1px dashed var(--rule);
+    text-align: right;
+  }
+
+  .holdings-table td:last-child {
+    border-bottom: none;
+  }
+
+  .holdings-table td::before {
+    content: attr(data-label);
+    font-family: var(--font-label);
+    font-size: var(--text-xs);
+    font-weight: 600;
+    color: var(--ink-2);
+    text-align: left;
+    margin-right: var(--space-3);
+  }
 }
 </style>

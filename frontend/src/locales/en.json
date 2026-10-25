@@ -359,6 +359,8 @@
     "preset1Desc": "Steadily investing $100 monthly into the S&P 500 index ETF.",
     "preset2Title": "AAPL $50/wk DCA",
     "preset2Desc": "Dampening single-stock volatility by investing $50 weekly into Apple.",
+    "preset3Title": "QQQ $150/mo Tech DCA",
+    "preset3Desc": "Steadily accumulating the Nasdaq-100 tech index ETF with $150 monthly.",
     "presetApply": "Apply preset",
     "given": "Given",
     "symbol": "Symbol",

@@ -35,6 +35,18 @@
           <p class="preset-desc">{{ t('backtest.preset2Desc') }}</p>
           <span class="preset-action">{{ t('backtest.presetApply') }} →</span>
         </button>
+        <button
+          type="button"
+          class="preset-card"
+          @click="applyPreset('QQQ', 'MONTHLY', 150, 1500)"
+        >
+          <div class="preset-header">
+            <span class="preset-tag">QQQ</span>
+            <strong class="preset-title">{{ t('backtest.preset3Title') }}</strong>
+          </div>
+          <p class="preset-desc">{{ t('backtest.preset3Desc') }}</p>
+          <span class="preset-action">{{ t('backtest.presetApply') }} →</span>
+        </button>
       </div>
     </section>
 

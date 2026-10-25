@@ -42,9 +42,18 @@ export const usePortfolioStore = defineStore('portfolio', () => {
       if (response.success && response.data) {
         portfolios.value = response.data
 
-        // 현재 포트폴리오가 없으면 첫 번째로 설정
-        if (!currentPortfolio.value && response.data.length > 0) {
-          currentPortfolio.value = response.data[0]!
+        // 현재 포트폴리오가 없으면 저장된 ID 또는 첫 번째로 설정
+        if (response.data.length > 0) {
+          let selected: PortfolioResponse | null = null
+          try {
+            const savedId = localStorage.getItem('selected_portfolio_id')
+            if (savedId) {
+              selected = response.data.find((p) => p.id === Number(savedId)) ?? null
+            }
+          } catch {
+            // storage unavailable
+          }
+          currentPortfolio.value = selected ?? currentPortfolio.value ?? response.data[0]!
         }
       } else {
         error.value = response.error?.message ?? '포트폴리오 조회에 실패했습니다'
@@ -168,6 +177,11 @@ export const usePortfolioStore = defineStore('portfolio', () => {
    */
   function setCurrentPortfolio(portfolio: PortfolioResponse) {
     currentPortfolio.value = portfolio
+    try {
+      localStorage.setItem('selected_portfolio_id', String(portfolio.id))
+    } catch {
+      // storage unavailable
+    }
   }
 
   /**
@@ -184,6 +198,11 @@ export const usePortfolioStore = defineStore('portfolio', () => {
     portfolios.value = []
     currentPortfolio.value = null
     error.value = null
+    try {
+      localStorage.removeItem('selected_portfolio_id')
+    } catch {
+      // storage unavailable
+    }
   }
 
   return {

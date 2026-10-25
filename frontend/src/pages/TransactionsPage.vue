@@ -178,23 +178,23 @@
             </thead>
             <tbody>
               <tr v-for="tx in filteredTransactions" :key="tx.id">
-                <td class="tx-date fig">{{ formatDateTime(tx.timestamp, locale) }}</td>
-                <td>
+                <td :data-label="t('transactions.colDate')" class="tx-date fig">{{ formatDateTime(tx.timestamp, locale) }}</td>
+                <td :data-label="t('transactions.colType')">
                   <span class="tx-type" :class="`type-${tx.type.toLowerCase()}`">{{ transactionTypeLabel(tx.type) }}</span>
                 </td>
-                <td class="tx-symbol">{{ tx.symbol || '-' }}</td>
-                <td class="num">{{ tx.qty !== undefined ? formatNumber(tx.qty, locale) : '-' }}</td>
-                <td class="num">{{ tx.price !== undefined ? formatUsd(tx.price, locale) : '-' }}</td>
-                <td class="num">{{ formatUsd(tx.fee, locale) }}</td>
-                <td class="num">
+                <td :data-label="t('transactions.colSymbol')" class="tx-symbol">{{ tx.symbol || '-' }}</td>
+                <td :data-label="t('transactions.colQuantity')" class="num">{{ tx.qty !== undefined ? formatNumber(tx.qty, locale) : '-' }}</td>
+                <td :data-label="t('transactions.colPrice')" class="num">{{ tx.price !== undefined ? formatUsd(tx.price, locale) : '-' }}</td>
+                <td :data-label="t('transactions.colFee')" class="num">{{ formatUsd(tx.fee, locale) }}</td>
+                <td :data-label="t('transactions.colTotal')" class="num">
                   {{
                     tx.qty !== undefined && tx.price !== undefined
                       ? formatUsd(tx.qty * tx.price + tx.fee, locale)
                       : '-'
                   }}
                 </td>
-                <td class="tx-note">{{ tx.note || '-' }}</td>
-                <td class="tx-actions">
+                <td :data-label="t('transactions.colNote')" class="tx-note">{{ tx.note || '-' }}</td>
+                <td :data-label="t('transactions.colActions')" class="tx-actions">
                   <button
                     type="button"
                     class="icon-btn"
@@ -664,6 +664,54 @@ onMounted(() => {
     flex: 1 1 auto;
     justify-content: center;
     padding: 0 var(--space-2);
+  }
+}
+
+@media (max-width: 680px) {
+  .transactions-table thead {
+    display: none;
+  }
+
+  .transactions-table,
+  .transactions-table tbody {
+    display: block;
+    width: 100%;
+  }
+
+  .transactions-table tr {
+    display: block;
+    border: 1px solid var(--rule-strong);
+    background-color: var(--paper-raised);
+    margin-bottom: var(--space-4);
+    padding: var(--space-3) var(--space-4);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  }
+
+  .transactions-table tr:hover {
+    background-color: var(--paper-raised);
+  }
+
+  .transactions-table td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-2) 0;
+    border-bottom: 1px dashed var(--rule);
+    text-align: right;
+  }
+
+  .transactions-table td:last-child {
+    border-bottom: none;
+  }
+
+  .transactions-table td::before {
+    content: attr(data-label);
+    font-family: var(--font-label);
+    font-size: var(--text-xs);
+    font-weight: 600;
+    color: var(--ink-2);
+    text-align: left;
+    margin-right: var(--space-3);
   }
 }
 </style>
