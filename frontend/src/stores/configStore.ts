@@ -18,7 +18,7 @@ export type Locale = 'ko' | 'en'
 export const useConfigStore = defineStore('config', () => {
   const backendMode = ref<BackendMode>('mock')
   const backendUrl = ref<string>('https://finlab-api.fly.dev')
-  const locale = ref<Locale>('ko') // 기본 언어: 한국어
+  const locale = ref<Locale>('en') // 기본 언어: 영어
   // 공개 데모 빌드(VITE_DEMO_ONLY=true): CSP가 원격 백엔드를 막으므로 저장된 Live 설정과 무관하게 Mock만 사용
   const isDemoOnly = import.meta.env.VITE_DEMO_ONLY === 'true'
 

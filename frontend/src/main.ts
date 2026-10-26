@@ -29,7 +29,7 @@ import { useAuthStore } from './stores/authStore'
 import { useConfigStore } from './stores/configStore'
 
 // 시작 단계 화면: Vue 마운트 전에 #app에 직접 그린다 (스타일 시트 없이도 읽히도록 인라인 여백만 지정)
-// 문구는 복원된 언어 설정(기본 한국어)을 따른다
+// 문구는 복원된 언어 설정(기본 영어)을 따른다
 function renderStartupScreen(html: string) {
   document.documentElement.lang = i18n.global.locale.value
   const root = document.getElementById('app')
@@ -71,7 +71,7 @@ async function bootstrap() {
     try {
       configStore.restore()
     } catch {
-      // 저장소 자체를 읽을 수 없으면 기본 언어(한국어)
+      // 저장소 자체를 읽을 수 없으면 기본 언어(영어)
     }
     i18n.global.locale.value = configStore.locale
     showStartupError()

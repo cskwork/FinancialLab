@@ -42,4 +42,17 @@ describe('configStore', () => {
 
     expect(store.backendMode).toBe('mock')
   })
+
+  it('defaults to English locale when no stored locale exists', () => {
+    const store = useConfigStore()
+    store.restore()
+    expect(store.locale).toBe('en')
+  })
+
+  it('restores stored Korean locale correctly', () => {
+    localStorage.setItem('finlab_locale', 'ko')
+    const store = useConfigStore()
+    store.restore()
+    expect(store.locale).toBe('ko')
+  })
 })
