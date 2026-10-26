@@ -13,8 +13,8 @@ export type MessageSchema = typeof ko
 // i18n 인스턴스 생성
 export const i18n = createI18n<[MessageSchema], 'ko' | 'en', false>({
   legacy: false, // Composition API 사용
-  locale: 'ko', // 기본 언어: 한국어
-  fallbackLocale: 'en', // 폴백 언어: 영어
+  locale: 'en', // 기본 언어: 영어
+  fallbackLocale: 'ko', // 폴백 언어: 한국어
   messages: {
     ko,
     en

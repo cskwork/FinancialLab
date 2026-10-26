@@ -135,7 +135,7 @@ describe('route copy in both languages', () => {
     mounted = null
     document.body.innerHTML = ''
     i18n.global.setMissingHandler(null)
-    i18n.global.locale.value = 'ko'
+    i18n.global.locale.value = 'en'
     vi.unstubAllGlobals()
     vi.restoreAllMocks()
   })

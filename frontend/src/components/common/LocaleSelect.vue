@@ -8,8 +8,8 @@
     <div class="control">
       <Languages v-if="compact" class="icon" aria-hidden="true" />
       <select :id="id" v-model="currentLocale">
-        <option value="ko" lang="ko">{{ t('nav.korean') }}</option>
         <option value="en" lang="en">{{ t('nav.english') }}</option>
+        <option value="ko" lang="ko">{{ t('nav.korean') }}</option>
       </select>
     </div>
   </div>
