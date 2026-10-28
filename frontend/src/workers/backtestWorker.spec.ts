@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs'
 import { describe, it, expect, vi, beforeAll, beforeEach } from 'vitest'
 
 // The worker registers a 'message' listener on `self` and replies through the global `postMessage`.
@@ -38,9 +39,9 @@ function run(candles: ReturnType<typeof candle>[], dcaInterval: 'WEEKLY' | 'MONT
   return replies.mock.calls[0]![0]
 }
 
-// 31 candles: close 10 for the first 30, then 20 on the last one.
+// 31 candles: close 10 for the first 30, then 20 on February 1.
 const candles = Array.from({ length: 31 }, (_, i) =>
-  candle(`2024-01-${String(i + 1).padStart(2, '0')}`, i === 30 ? 20 : 10)
+  candle(i === 30 ? '2024-02-01' : `2024-01-${String(i + 1).padStart(2, '0')}`, i === 30 ? 20 : 10)
 )
 
 describe('backtestWorker', () => {
@@ -58,11 +59,11 @@ describe('backtestWorker', () => {
     })
   })
 
-  it('buys a fixed amount every 30 candles for MONTHLY DCA', () => {
+  it('buys on the first available date of each month for MONTHLY DCA', () => {
     const { data } = run(candles)
 
     // Buys at index 0 (close 10) and index 30 (close 20): 10 + 5 shares for 200 invested.
-    expect(data.dcaStrategy.trades.map((t: { date: string }) => t.date)).toEqual(['2024-01-01', '2024-01-31'])
+    expect(data.dcaStrategy.trades.map((t: { date: string }) => t.date)).toEqual(['2024-01-01', '2024-02-01'])
     expect(data.dcaStrategy.totalInvested).toBe(200)
     expect(data.dcaStrategy.totalShares).toBe(15)
     expect(data.dcaStrategy.finalValue).toBe(300)
@@ -70,11 +71,55 @@ describe('backtestWorker', () => {
     expect(data.dcaStrategy.returnPercentage).toBe(50)
   })
 
-  it('steps by 7 candles (not calendar weeks) for WEEKLY DCA', () => {
+  it('buys once per ISO calendar week for WEEKLY DCA', () => {
     const { data } = run(candles, 'WEEKLY')
 
-    expect(data.dcaStrategy.trades).toHaveLength(5) // indices 0, 7, 14, 21, 28
+    expect(data.dcaStrategy.trades).toHaveLength(5)
+    expect(data.dcaStrategy.trades.map((t: { date: string }) => t.date)).toEqual([
+      '2024-01-01', '2024-01-08', '2024-01-15', '2024-01-22', '2024-01-29'
+    ])
     expect(data.dcaStrategy.totalInvested).toBe(500)
+  })
+
+  it('uses first trading days across a month boundary and the January 15 holiday gap', () => {
+    const dates = ['2024-01-11', '2024-01-12', '2024-01-16', '2024-01-17',
+      '2024-01-29', '2024-01-31', '2024-02-01', '2024-02-02', '2024-02-05']
+    const rows = dates.map((date) => candle(date, 10))
+    const weekly = run(rows, 'WEEKLY').data.dcaStrategy
+    expect(weekly.trades.map((t: { date: string }) => t.date)).toEqual([
+      '2024-01-11', '2024-01-16', '2024-01-29', '2024-02-05'
+    ])
+    expect(weekly.totalInvested).toBe(400)
+    replies.mockClear()
+    const monthly = run(rows).data.dcaStrategy
+    expect(monthly.trades.map((t: { date: string }) => t.date)).toEqual(['2024-01-11', '2024-02-01'])
+    expect(monthly.totalInvested).toBe(200)
+  })
+
+  it('keeps an ISO week together across the year boundary', () => {
+    const rows = ['2020-12-30', '2020-12-31', '2021-01-01', '2021-01-04', '2021-01-05', '2021-01-11']
+      .map((date) => candle(date, 10))
+    expect(run(rows, 'WEEKLY').data.dcaStrategy.trades.map((t: { date: string }) => t.date))
+      .toEqual(['2020-12-30', '2021-01-04', '2021-01-11'])
+  })
+
+  it('selects the earliest available price row even when input is unordered', () => {
+    const rows = [candle('2024-02-02', 20), candle('2024-01-31', 10), candle('2024-02-01', 10)]
+    const { data } = run(rows)
+    expect(data.dcaStrategy.trades.map((t: { date: string }) => t.date)).toEqual(['2024-01-31', '2024-02-01'])
+    expect(data.dcaStrategy.finalValue).toBe(400)
+    expect(data.lumpSumStrategy.finalValue).toBe(2000)
+    expect(rows[0]?.date).toBe('2024-02-02')
+  })
+
+  it('buys four calendar months in the bundled SPY demo', () => {
+    const rows = readFileSync('public/data/ohlcv/SPY.csv', 'utf8').trim().split('\n').slice(1)
+      .map((line) => { const [date, , , , close] = line.split(','); return candle(date!, Number(close)) })
+    const { data } = run(rows)
+    expect(data.dcaStrategy.trades.map((t: { date: string }) => t.date))
+      .toEqual(['2024-01-02', '2024-02-01', '2024-03-01', '2024-04-01'])
+    expect(data.dcaStrategy.totalInvested).toBe(400)
+    expect(data.dcaStrategy.finalValue).toBeCloseTo(416.3068625664, 8)
   })
 
   it('reports which strategy ended higher', () => {

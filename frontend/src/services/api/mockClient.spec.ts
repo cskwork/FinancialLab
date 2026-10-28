@@ -53,6 +53,36 @@ describe('mockApiClient integrations', () => {
     expect(metricsResponse.data?.totalValue).toBeGreaterThan(0)
   })
 
+  it('uses the same percent-based Sharpe arithmetic in the mock API', async () => {
+    const { portfolioId } = await seedPortfolio()
+    await db.candles.clear()
+    await db.candles.bulkAdd([100, 102, 102].map((close, i) => ({
+      symbol: 'AAPL', date: `2024-01-0${i + 1}`, open: close, high: close,
+      low: close, close, volume: 0
+    })))
+    // Closes 100 -> 102 -> 102 give [2, 0]%; Sharpe = (1 - 2/252) * sqrt(252).
+    const metrics = await mockApiClient.getPortfolioMetrics(portfolioId)
+    expect(metrics.success).toBe(true)
+    expect(metrics.data?.sharpe).toBeCloseTo(15.7485197087, 10)
+  })
+
+  it('returns fee-inclusive holdings and unrealized PnL through the API', async () => {
+    const { portfolioId } = await seedPortfolio()
+    // 10 shares at 100 plus fee 1: cost 1001, average 100.1; marked at 118, PnL 179.
+    const holdings = await mockApiClient.getHoldings(portfolioId)
+    expect(holdings.success).toBe(true)
+    expect(holdings.data?.[0]?.avgCost).toBe(100.1)
+    expect(holdings.data?.[0]?.unrealizedPnL).toBe(179)
+  })
+
+  it('keeps zero metrics when a holding has no return history', async () => {
+    const { portfolioId } = await seedPortfolio()
+    await db.candles.clear()
+    const metrics = await mockApiClient.getPortfolioMetrics(portfolioId)
+    expect(metrics.success).toBe(true)
+    expect(metrics.data).toMatchObject({ volatility: 0, sharpe: 0, maxDrawdown: 0 })
+  })
+
   it('rejects a SELL that exceeds held shares so holdings stay computable', async () => {
     const { portfolioId } = await seedPortfolio()
 
