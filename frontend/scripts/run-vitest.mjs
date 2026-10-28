@@ -1,6 +1,9 @@
 #!/usr/bin/env node
 import crypto, { webcrypto } from 'node:crypto'
 import { Buffer } from 'node:buffer'
+import { createRequire } from 'node:module'
+import { dirname, join } from 'node:path'
+import { pathToFileURL } from 'node:url'
 
 if (typeof globalThis.crypto?.getRandomValues !== 'function') {
   // Node 16 런타임에서 Vitest CLI가 Web Crypto API를 필요로 하므로 Polyfill을 주입합니다.
@@ -45,4 +48,7 @@ if (process.argv[1] && !process.argv[1].includes('vitest')) {
   process.argv.splice(1, 1, 'vitest')
 }
 
-await import('vitest/vitest.mjs')
+// Vitest 4 no longer exports its CLI file, so load it through the package's own bin entry.
+const require = createRequire(import.meta.url)
+const vitestDir = dirname(require.resolve('vitest/package.json'))
+await import(pathToFileURL(join(vitestDir, require('vitest/package.json').bin.vitest)).href)
