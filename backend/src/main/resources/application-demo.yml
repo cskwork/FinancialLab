@@ -1,0 +1,4 @@
+# Explicit demo opt-in; production profiles do not include the documented demo account.
+spring:
+  flyway:
+    locations: classpath:db/migration,classpath:db/demo

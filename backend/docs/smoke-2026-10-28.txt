@@ -1,0 +1,34 @@
+FinLab local HTTP smoke, 2026-10-28T03:37:46Z
+PASS GET /actuator/health -> HTTP 200
+{"groups":["liveness","readiness"],"status":"UP"}
+PASS POST /v1/auth/login -> HTTP 200
+{"userId":1,"email":"demo@finlab.app","role":"USER","token":"[REDACTED]"}
+PASS POST /v1/portfolios -> HTTP 201
+{"id":1,"userId":1,"name":"Local smoke","baseCurrency":"USD","createdAt":"2026-10-28T03:37:47.495031Z","updatedAt":"2026-10-28T03:37:47.495031Z"}
+PASS POST /v1/portfolios/1/transactions -> HTTP 201
+{"id":1,"portfolioId":1,"type":"BUY","symbol":"AAPL","qty":10.00000000,"price":100.0000,"fee":1.0000,"timestamp":"2024-01-02T14:30:00Z"}
+PASS POST /v1/portfolios/1/transactions -> HTTP 201
+{"id":1,"portfolioId":1,"type":"BUY","symbol":"AAPL","qty":10.00000000,"price":100.0000,"fee":1.0000,"timestamp":"2024-01-02T14:30:00Z"}
+PASS idempotent replay is byte-for-byte identical
+PASS GET /v1/portfolios/1/transactions -> HTTP 200
+[{"id":1,"portfolioId":1,"type":"BUY","symbol":"AAPL","qty":10.00000000,"price":100.0000,"fee":1.0000,"timestamp":"2024-01-02T14:30:00Z"}]
+PASS create/read numeric values agree; quantity scale 8 and money scale 4; no exponent notation
+PASS POST /v1/portfolios/1/transactions -> HTTP 422
+{"detail":"Idempotency-Key was used with a different request","instance":"/v1/portfolios/1/transactions","status":422,"title":"Unprocessable Content","type":"urn:finlab:problem:idempotency-key-reused","code":"IDEMPOTENCY_KEY_REUSED","message":"Idempotency-Key was used with a different request","requestId":"finlab-smoke"}
+PASS POST /v1/portfolios/1/transactions -> HTTP 201
+{"id":2,"portfolioId":1,"type":"SELL","symbol":"AAPL","qty":4.00000000,"price":110.0000,"fee":1.0000,"timestamp":"2024-01-03T14:30:00Z"}
+PASS POST /v1/portfolios/1/transactions -> HTTP 422
+{"detail":"AAPL 매도 수량이 보유 수량을 초과합니다","instance":"/v1/portfolios/1/transactions","status":422,"title":"Unprocessable Content","type":"urn:finlab:problem:validation-error","code":"VALIDATION_ERROR","message":"AAPL 매도 수량이 보유 수량을 초과합니다","requestId":"finlab-smoke"}
+PASS GET /v1/portfolios/1/transactions -> HTTP 200
+[{"id":2,"portfolioId":1,"type":"SELL","symbol":"AAPL","qty":4.00000000,"price":110.0000,"fee":1.0000,"timestamp":"2024-01-03T14:30:00Z"},{"id":1,"portfolioId":1,"type":"BUY","symbol":"AAPL","qty":10.00000000,"price":100.0000,"fee":1.0000,"timestamp":"2024-01-02T14:30:00Z"}]
+PASS transactions newest first, X-Total-Count=2, count header exposed through CORS
+PASS GET /v1/portfolios/1/holdings -> HTTP 200
+[{"id":1,"portfolioId":1,"symbol":"AAPL","shares":6.00000000,"avgCost":100.10000000,"marketValue":1278.4200,"unrealizedPnL":677.8200,"lastUpdated":"2026-10-28T03:37:48.613683Z"}]
+PASS GET /v1/metrics/portfolio/1 -> HTTP 200
+{"id":0,"portfolioId":1,"asOf":"2026-10-28T03:37:48.794991Z","totalValue":1278.4200,"cash":0.0000,"pnlDaily":5.3019,"pnlYTD":188.8982,"volatility":10.655433712027488,"sharpe":5.214449805103152,"maxDrawdown":2.40249946132298}
+PASS DELETE /v1/portfolios/1 -> HTTP 200
+{"success":true}
+PASS OpenAPI bearer scheme, public login, Swagger HTML and all referenced JS/CSS assets
+PASS Swagger inline styles permitted; API CSP remains strict; no blocked inline JavaScript
+PASS all local smoke assertions
+PASS own app and PostgreSQL stopped; smoke ports 60373 and 60372 closed; existing 8080/5173 processes preserved

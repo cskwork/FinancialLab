@@ -1,0 +1,11 @@
+{
+  "id": 1,
+  "portfolioId": 1,
+  "type": "BUY",
+  "symbol": "AAPL",
+  "qty": 10,
+  "price": 185.64,
+  "fee": 2.5,
+  "timestamp": "2024-01-02T14:30:00Z",
+  "note": "Example BUY"
+}

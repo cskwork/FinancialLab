@@ -1,0 +1,12 @@
+[
+  {
+    "id": 1,
+    "portfolioId": 1,
+    "symbol": "SPY",
+    "amountPerInterval": 100,
+    "interval": "MONTHLY",
+    "startDate": "2024-01-02T14:30:00Z",
+    "endDate": "2030-01-01T00:00:00Z",
+    "isActive": true
+  }
+]

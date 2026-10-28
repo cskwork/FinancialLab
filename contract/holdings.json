@@ -1,0 +1,12 @@
+[
+  {
+    "id": 1,
+    "portfolioId": 1,
+    "symbol": "AAPL",
+    "shares": 90,
+    "avgCost": 195.03944444444446,
+    "marketValue": 19176.3,
+    "unrealizedPnL": 1622.75,
+    "lastUpdated": "2024-01-02T14:30:00Z"
+  }
+]

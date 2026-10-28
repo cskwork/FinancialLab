@@ -1,0 +1,9 @@
+{
+  "type": "urn:finlab:problem:validation-error",
+  "title": "Bad Request",
+  "status": 400,
+  "detail": "Invalid request",
+  "instance": "/v1/portfolios",
+  "code": "VALIDATION_ERROR",
+  "message": "Invalid request"
+}
