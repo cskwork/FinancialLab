@@ -1,0 +1,9 @@
+{
+  "type": "urn:finlab:problem:unauthorized",
+  "title": "Unauthorized",
+  "status": 401,
+  "detail": "Authentication required",
+  "instance": "/v1/portfolios",
+  "code": "UNAUTHORIZED",
+  "message": "Authentication required"
+}

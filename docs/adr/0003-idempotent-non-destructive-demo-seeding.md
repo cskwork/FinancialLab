@@ -1,6 +1,8 @@
 # 0003. Seed sample data idempotently, from real rows, without touching visitor data
 
-- Status: Accepted (as implemented)
+- Status: Accepted (as implemented). Applies to the browser mock only. The backend seeds through Flyway instead:
+  `V3__seed_sample_market_data.sql` (same OHLCV samples, all profiles) and `db/demo/V2__seed_demo_user.sql` (demo
+  account, only `local`/`demo`/`test`); see [architecture](../architecture.md#migrations-and-profiles).
 - Evidence: `frontend/src/utils/seedLoader.ts`, `frontend/src/utils/seedLoader.spec.ts`, `frontend/src/main.ts`,
   `frontend/src/app/router.ts`, commits `6b6f52f` (2026-09-24) and `0df3a84` (2026-10-10).
 

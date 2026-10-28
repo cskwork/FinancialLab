@@ -70,7 +70,7 @@
                     v-model="backendUrl"
                     type="url"
                     :disabled="backendMode === 'mock'"
-                    placeholder="https://finlab-api.fly.dev"
+                    placeholder="http://localhost:8080"
                   />
                 </div>
                 <button

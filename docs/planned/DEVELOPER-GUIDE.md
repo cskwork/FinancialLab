@@ -1,6 +1,9 @@
-Planned backend — not implemented in this repository.
-
-Historical design/reference material; it is not a description of the shipped frontend. See [current architecture](../architecture.md).
+> **Superseded (2026-10-28).** This is a pre-implementation plan kept for history. Current documentation:
+> [architecture](../architecture.md), [backend README](../../backend/README.md), [HTTP contract](../../contract/README.md),
+> [ADRs](../adr/README.md).
+>
+> The implemented structure is described in [docs/architecture.md](../architecture.md) (frontend and backend
+> packages, layering, transactions). The backend lives in `backend/`, not `backend-samples/spring-boot`.
 
 # FinLab 개발자 가이드
 

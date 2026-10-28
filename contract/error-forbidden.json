@@ -1,0 +1,9 @@
+{
+  "type": "urn:finlab:problem:forbidden",
+  "title": "Forbidden",
+  "status": 403,
+  "detail": "Access denied",
+  "instance": "/v1/portfolios",
+  "code": "FORBIDDEN",
+  "message": "Access denied"
+}

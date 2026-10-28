@@ -5,7 +5,8 @@ import { createMemoryHistory, createRouter } from 'vue-router'
 import i18n from '@/i18n'
 import { db } from '@/services/db/schema'
 import { goalRepository, planRepository, portfolioRepository, transactionRepository } from '@/services/db/repositories'
-import { useAuthStore } from '@/stores/authStore'
+import { useAuthStore, DEMO_PASSWORD } from '@/stores/authStore'
+import { apiClient, mockApiClient, LoginRequestSchema } from '@/services/api'
 import { useConfigStore } from '@/stores/configStore'
 import { DEMO_EMAIL, DEMO_PORTFOLIO_NAME } from '@/utils/seedLoader'
 import ko from '@/locales/ko.json'
@@ -151,6 +152,166 @@ describe('route copy in both languages', () => {
     const copy = visibleCopy(await render(page, 'ko'))
     expect(copy).toContain(korean)
     expect(missingKeys).toEqual([])
+  })
+
+  it('requires a nonempty password in the login request schema', () => {
+    expect(LoginRequestSchema.safeParse({ email: DEMO_EMAIL }).success).toBe(false)
+    expect(LoginRequestSchema.safeParse({ email: DEMO_EMAIL, password: '' }).success).toBe(false)
+    expect(LoginRequestSchema.safeParse({ email: DEMO_EMAIL, password: 'visitor-password' }).success).toBe(true)
+  })
+
+  it.each([
+    { label: 'accepts 72 ASCII bytes', password: 'x'.repeat(72), valid: true },
+    { label: 'rejects 73 ASCII bytes', password: 'x'.repeat(73), valid: false },
+    { label: 'accepts 24 Korean characters (72 UTF-8 bytes)', password: '가'.repeat(24), valid: true },
+    { label: 'rejects 25 Korean characters (75 UTF-8 bytes)', password: '가'.repeat(25), valid: false }
+  ])('$label', ({ password, valid }) => {
+    const result = LoginRequestSchema.safeParse({ email: DEMO_EMAIL, password })
+    expect(result.success).toBe(valid)
+    if (!result.success) expect(JSON.stringify(result.error.issues)).not.toContain(password)
+  })
+
+  it('rejects passwords beyond the BCrypt byte limit before fetch without exposing their value', async () => {
+    setActivePinia(createPinia())
+    useConfigStore().setBackendMode('live')
+    const password = '가'.repeat(25)
+    const result = await apiClient.login({ email: DEMO_EMAIL, password })
+    expect(result).toMatchObject({ success: false, error: { code: 'VALIDATION_ERROR' } })
+    expect(JSON.stringify(result)).not.toContain(password)
+    expect(fetch).not.toHaveBeenCalled()
+  })
+
+  it('keeps one-click mock login and never stores a password', async () => {
+    const pinia = createPinia()
+    setActivePinia(pinia)
+    const auth = useAuthStore()
+    expect(await auth.login(DEMO_EMAIL)).toBe(true)
+    expect((await apiClient.login({ email: DEMO_EMAIL, password: DEMO_PASSWORD })).success).toBe(true)
+    expect(auth.isAuthenticated).toBe(true)
+    expect(JSON.stringify(pinia.state.value)).not.toContain(DEMO_PASSWORD)
+    expect(JSON.stringify({ ...localStorage })).not.toContain(DEMO_PASSWORD)
+    const users = await db.users.toArray()
+    expect(users).toHaveLength(1)
+    expect(users[0]).not.toHaveProperty('password')
+    expect(JSON.stringify(users)).not.toContain(DEMO_PASSWORD)
+    expect(fetch).not.toHaveBeenCalled()
+  })
+
+  it('accepts a mock demo password without persisting it', async () => {
+    const password = 'mock-visitor-password'
+    const response = await mockApiClient.login({ email: DEMO_EMAIL, password })
+    expect(response.success).toBe(true)
+    expect(JSON.stringify(await db.users.toArray())).not.toContain(password)
+    expect(JSON.stringify(response)).not.toContain(password)
+  })
+
+  it('runs the API Playground bundled login example in mock mode without inventing or storing a password', async () => {
+    setActivePinia(createPinia())
+    const request = openapi.paths['/v1/auth/login'].post.requestBody.content['application/json'].example
+    expect(request).toEqual({ email: DEMO_EMAIL })
+    const response = await apiClient.login(request)
+    expect(response).toMatchObject({ success: true, data: { email: DEMO_EMAIL } })
+    expect(fetch).not.toHaveBeenCalled()
+    const users = await db.users.toArray()
+    expect(users).toHaveLength(1)
+    expect(users[0]).not.toHaveProperty('password')
+    expect(JSON.stringify(users)).not.toContain(DEMO_PASSWORD)
+    expect(JSON.stringify({ ...localStorage })).not.toContain('password')
+  })
+
+  it('rejects passwordless live login without sending a request or using demo credentials', async () => {
+    setActivePinia(createPinia())
+    useConfigStore().setBackendMode('live')
+    const response = await apiClient.login({ email: DEMO_EMAIL })
+    expect(response).toMatchObject({ success: false, error: { code: 'VALIDATION_ERROR' } })
+    expect(await useAuthStore().login(DEMO_EMAIL)).toBe(false)
+    expect(useAuthStore().isAuthenticated).toBe(false)
+    expect(fetch).not.toHaveBeenCalled()
+    expect(localStorage.getItem('auth_token')).toBeNull()
+  })
+
+  it('sends email and password in live mode and stores only the parsed session response', async () => {
+    const pinia = createPinia()
+    setActivePinia(pinia)
+    useConfigStore().setBackendMode('live')
+    useConfigStore().setBackendUrl('http://localhost:8080')
+    const password = 'transient-test-password'
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify({
+      userId: 1, email: DEMO_EMAIL, role: 'USER', token: 'signed-token', password
+    }), { status: 200, headers: { 'Content-Type': 'application/json' } }))
+    vi.stubGlobal('fetch', fetchMock)
+    expect(await useAuthStore().login(DEMO_EMAIL, password)).toBe(true)
+    expect(fetchMock).toHaveBeenCalledWith('http://localhost:8080/v1/auth/login', expect.objectContaining({
+      method: 'POST', body: JSON.stringify({ email: DEMO_EMAIL, password })
+    }))
+    expect(useAuthStore().token).toBe('signed-token')
+    expect(localStorage.getItem('auth_token')).toBe('signed-token')
+    expect(JSON.stringify(pinia.state.value)).not.toContain(password)
+    expect(JSON.stringify({ ...localStorage })).not.toContain(password)
+    expect(console.error).not.toHaveBeenCalled()
+  })
+
+  it('labels the live password field, reports errors accessibly, and clears input after submission', async () => {
+    const host = await render(LoginPage, 'en', async () => {
+      useConfigStore().setBackendMode('live')
+      vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({
+        type: 'about:blank', title: 'Unauthorized', status: 401, instance: '/v1/auth/login',
+        detail: '이메일 또는 비밀번호가 올바르지 않습니다', code: 'INVALID_CREDENTIALS',
+        message: '이메일 또는 비밀번호가 올바르지 않습니다'
+      }), { status: 401, headers: { 'Content-Type': 'application/problem+json' } })))
+    })
+    const input = host.querySelector<HTMLInputElement>('#password')!
+    expect(host.querySelector('label[for="password"]')?.textContent).toBe('Password')
+    expect(input.type).toBe('password')
+    expect(input.autocomplete).toBe('current-password')
+    expect(input.maxLength).toBe(72)
+    expect(input.required).toBe(true)
+    expect(input.value).toBe('')
+    expect(input.getAttribute('aria-describedby')).toBe('login-hint')
+    expect(host.querySelector('#login-hint')?.textContent).toContain(DEMO_PASSWORD)
+    input.value = 'rejected-password'
+    input.dispatchEvent(new Event('input'))
+    host.querySelector('form')!.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }))
+    await settle()
+    expect(input.value).toBe('')
+    expect(input.getAttribute('aria-invalid')).toBe('true')
+    expect(input.getAttribute('aria-describedby')).toBe('login-error')
+    expect(host.querySelector('#login-error')?.getAttribute('role')).toBe('alert')
+    expect(host.querySelector('#login-error')?.textContent).toContain('Email or password is incorrect')
+    expect(host.querySelector('#login-error')?.textContent).not.toContain('\"type\"')
+    expect(JSON.stringify({ ...localStorage })).not.toContain('rejected-password')
+  })
+
+  it('prefills mock credentials so the login form still opens the demo in one click', async () => {
+    const host = await render(LoginPage, 'en')
+    const input = host.querySelector<HTMLInputElement>('#password')!
+    expect(input.value).toBe(DEMO_PASSWORD)
+    host.querySelector('form')!.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }))
+    await settle()
+    expect(useAuthStore().isAuthenticated).toBe(true)
+    expect(input.value).toBe('')
+    expect(fetch).not.toHaveBeenCalled()
+  })
+
+  it('keeps the public demo credential prefilled after a failed mock login so retry is one click', async () => {
+    const host = await render(LoginPage, 'en')
+    const auth = useAuthStore()
+    vi.spyOn(auth, 'login').mockImplementationOnce(async () => {
+      auth.error = '로그인에 실패했습니다'
+      return false
+    })
+    const form = host.querySelector('form')!
+    const input = host.querySelector<HTMLInputElement>('#password')!
+    form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }))
+    await settle()
+    expect(input.value).toBe(DEMO_PASSWORD)
+    expect(host.querySelector('#login-error')?.textContent).toContain('Login failed')
+    expect(JSON.stringify({ ...localStorage })).not.toContain(DEMO_PASSWORD)
+    form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }))
+    await settle()
+    expect(auth.isAuthenticated).toBe(true)
+    expect(input.value).toBe('')
+    expect(fetch).not.toHaveBeenCalled()
   })
 
   it('offers the language selector on landing and login, where the nav is hidden', async () => {

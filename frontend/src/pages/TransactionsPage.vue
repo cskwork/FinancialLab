@@ -86,6 +86,10 @@
             <label for="fee">{{ t('transactions.colFee') }}</label>
             <input id="fee" v-model.number="formData.fee" type="number" step="0.01" min="0" placeholder="0.00" />
           </div>
+          <div v-if="formData.qty !== undefined && formData.price !== undefined" class="field f-num">
+            <label for="transaction-total">{{ t('transactions.colTotal') }}</label>
+            <output id="transaction-total" class="fig">{{ formatUsd(transactionTotal(formData.type, formData.qty, formData.price, formData.fee), locale) }}</output>
+          </div>
           <div class="field f-note">
             <label for="note">{{ t('transactions.colNote') }}</label>
             <input id="note" v-model="formData.note" type="text" :placeholder="t('transactions.notePlaceholder')" />
@@ -189,7 +193,7 @@
                 <td :data-label="t('transactions.colTotal')" class="num">
                   {{
                     tx.qty !== undefined && tx.price !== undefined
-                      ? formatUsd(tx.qty * tx.price + tx.fee, locale)
+                      ? formatUsd(transactionTotal(tx.type, tx.qty, tx.price, tx.fee), locale)
                       : '-'
                   }}
                 </td>
@@ -226,6 +230,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { Plus, X, Upload, Search, Trash2 } from 'lucide-vue-next'
 import { useAuthStore } from '@/stores/authStore'
+import { useConfigStore } from '@/stores/configStore'
 import { usePortfolioStore } from '@/stores/portfolioStore'
 import { useTransactionStore } from '@/stores/transactionStore'
 import { useAnalyticsStore } from '@/stores/analyticsStore'
@@ -251,6 +256,7 @@ const router = useRouter()
 const route = useRoute()
 const { t, locale } = useI18n()
 const authStore = useAuthStore()
+const configStore = useConfigStore()
 const portfolioStore = usePortfolioStore()
 const transactionStore = useTransactionStore()
 const analyticsStore = useAnalyticsStore()
@@ -258,6 +264,7 @@ const toast = useToast()
 
 const isLoading = ref(false)
 const showAddForm = ref(false)
+let pendingSubmit: { body: string; key: string } | null = null
 // 필터 상태는 URL 쿼리(?type=&q=)에 보존되어 새로고침/공유 시 유지된다
 const initialFilter = filterFromQuery(route.query)
 const filterType = ref<TypeFilter>(initialFilter.type)
@@ -338,6 +345,10 @@ async function loadData() {
   }
 }
 
+function transactionTotal(type: string, qty: number, price: number, fee: number): number {
+  return qty * price + (type === 'SELL' ? -fee : fee)
+}
+
 // 거래 추가
 async function handleAddTransaction() {
   if (!portfolioStore.currentPortfolio) {
@@ -355,7 +366,14 @@ async function handleAddTransaction() {
     note: formData.note || undefined
   }
 
-  const success = await transactionStore.createTransaction(request)
+  // Retain the key while retrying an unchanged submission after an uncertain response.
+  let idempotencyKey: string | undefined
+  if (configStore.isLiveMode) {
+    const body = JSON.stringify(request)
+    if (pendingSubmit?.body !== body) pendingSubmit = { body, key: crypto.randomUUID() }
+    idempotencyKey = pendingSubmit.key
+  }
+  const success = await transactionStore.createTransaction(request, idempotencyKey)
 
   if (success) {
     resetForm()
@@ -454,6 +472,7 @@ function cleanupWorker(worker: Worker) {
 
 // 폼 리셋
 function resetForm() {
+  pendingSubmit = null
   formData.type = 'BUY'
   formData.symbol = ''
   formData.qty = undefined
