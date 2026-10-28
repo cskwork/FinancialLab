@@ -41,7 +41,7 @@ flowchart LR
 
 ## 로컬 실행
 
-Node 20.19 이상 또는 22.12 이상 (Vite 7의 `engines` 기준. CI는 Node 20 최신판, 아래 결과는 Node 22.19.0에서 확인).
+Node 20.x는 20.19 이상, 또는 22.12 이상 (Vite 7의 `engines` 기준. Node 21은 지원하지 않음. CI는 Node 20 최신판, 아래 결과는 Node 22.19.0에서 확인).
 
 ```bash
 cd frontend
