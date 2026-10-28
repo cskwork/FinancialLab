@@ -38,11 +38,10 @@ flowchart LR
 - **방문자 데이터를 지우지 않는 멱등 샘플 시딩** — 실제 IndexedDB 행을 기준으로 빠진 샘플만 채우고, 기존 포트폴리오와 분리된 이름의 샘플 포트폴리오를 씁니다. 시딩은 Dexie 트랜잭션 안에서 실행해 탭이 여러 개여도 중복되지 않습니다. (`frontend/src/utils/seedLoader.ts`, [ADR 0003](docs/adr/0003-idempotent-non-destructive-demo-seeding.md))
 - **공유 지표와 달력 기반 DCA** — `utils/metrics.ts`를 지표 워커와 mock API가 함께 사용합니다. 샤프는 퍼센트 일수익률에서 `연간 무위험 수익률 × 100 / 252`를 뺍니다. DCA는 ISO 주·달력 월의 첫 가격 행에서 매수합니다. (`frontend/src/utils/metrics.ts`, `frontend/src/workers/backtestWorker.ts`)
 - **계산은 Web Worker에서** — DCA/일시불 백테스트, 변동성·샤프·최대 낙폭, CSV 파싱을 각각 별도 워커에서 실행해 UI 스레드를 막지 않습니다. (`frontend/src/workers/`)
-- **브라우저 보안 헤더** — Vercel 응답에 CSP(`connect-src`를 self와 Vercel로 제한), `X-Frame-Options: DENY`, `nosniff`를 붙입니다. CSP 때문에 공개 데모에서는 외부 live 백엔드 호출이 막히므로 mock 전용 모드와 짝을 이룹니다. (`vercel.json`)
 
 ## 로컬 실행
 
-Node 20 이상 (CI는 Node 20, 아래 결과는 Node 22.19.0에서 확인).
+Node 20.19 이상 또는 22.12 이상 (Vite 7의 `engines` 기준. CI는 Node 20 최신판, 아래 결과는 Node 22.19.0에서 확인).
 
 ```bash
 cd frontend
