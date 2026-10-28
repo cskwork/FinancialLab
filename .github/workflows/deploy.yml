@@ -25,33 +25,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 2. (Optional) Spring Boot 백엔드 빌드 - 문서 생성용
-      # 백엔드가 준비되면 주석 해제
-      # - name: Setup Java
-      #   uses: actions/setup-java@v4
-      #   with:
-      #     distribution: 'temurin'
-      #     java-version: '21'
-      #     cache: 'maven'
-      #
-      # - name: Build Spring Boot & Generate Docs
-      #   working-directory: backend-samples/spring-boot
-      #   run: |
-      #     mvn -B clean verify
-      #     mkdir -p ../../frontend/public/docs/{apidocs,coverage,tests}
-      #
-      #     # OpenAPI 스펙 복사
-      #     cp target/openapi.json ../../frontend/public/docs/ || true
-      #
-      #     # Javadoc 복사
-      #     cp -r target/site/apidocs/* ../../frontend/public/docs/apidocs/ || true
-      #
-      #     # JaCoCo 커버리지 리포트 복사
-      #     cp -r target/site/jacoco/* ../../frontend/public/docs/coverage/ || true
-      #
-      #     # 테스트 리포트 복사
-      #     cp -r target/surefire-reports ../../frontend/public/docs/tests/ || true
-
       # 3. Node.js 환경 설정
       - name: Setup Node.js
         uses: actions/setup-node@v4
