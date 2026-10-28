@@ -27,7 +27,9 @@ holdings and analytics request for that portfolio failed.
 - An invalid ledger cannot be created through the API, so holdings and metrics stay computable.
 - Each SELL or delete replays the full portfolio ledger: O(n) per write. Fine for demo-sized portfolios; a server
   would want stored lots or an index.
-- Fees are recorded but not part of cost basis, a known simplification.
+- Buy fees are allocated per share in FIFO lots, so partial sales retain their share of cost. Sell fees reduce
+  realized proceeds; `FifoCalculator.getSales()` exposes the resulting cost basis and realized PnL.
+- Backtest simulations are separate from ledger accounting and still omit fees.
 
 ## Alternatives considered
 
