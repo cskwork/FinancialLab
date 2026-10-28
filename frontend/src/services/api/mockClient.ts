@@ -187,12 +187,14 @@ export class MockApiClient {
   // ========== Auth Methods ==========
 
   /**
-   * 로그인 (이메일 기반)
+   * 로그인 (Mock 전용, 비밀번호는 검증 후 저장하지 않음)
    */
-  async login(request: schemas.LoginRequest): Promise<ApiResponse<schemas.LoginResponse>> {
+  async login(request: schemas.LoginRequest | Pick<schemas.LoginRequest, 'email'>): Promise<ApiResponse<schemas.LoginResponse>> {
     try {
-      // 요청 검증
-      const validated = schemas.LoginRequestSchema.parse(request)
+      // 공개 데모의 기존 이메일 전용 예제는 유지한다. 전달된 비밀번호는 항상 검증하며 저장하지 않는다.
+      const validated = request?.email === 'demo@finlab.app' && !('password' in request)
+        ? schemas.LoginRequestSchema.omit({ password: true }).parse(request)
+        : schemas.LoginRequestSchema.parse(request)
 
       // 사용자 조회 (없으면 생성)
       let user = await userRepository.findByEmail(validated.email)

@@ -134,7 +134,7 @@
           </div>
           <div class="field mode-url">
             <label for="landing-backend-url">{{ t('landing.liveUrl') }}</label>
-            <input id="landing-backend-url" v-model="backendUrl" type="url" placeholder="https://finlab-api.fly.dev" />
+            <input id="landing-backend-url" v-model="backendUrl" type="url" placeholder="http://localhost:8080" />
           </div>
           <p class="mode-hint">{{ t('landing.mockHint') }}</p>
         </div>

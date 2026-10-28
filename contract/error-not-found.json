@@ -1,0 +1,9 @@
+{
+  "type": "urn:finlab:problem:not-found",
+  "title": "Not Found",
+  "status": 404,
+  "detail": "Resource not found",
+  "instance": "/v1/portfolios",
+  "code": "NOT_FOUND",
+  "message": "Resource not found"
+}

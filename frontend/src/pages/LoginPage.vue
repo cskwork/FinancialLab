@@ -35,6 +35,22 @@
           />
         </div>
 
+        <div class="field">
+          <label for="password">{{ t('login.password') }}</label>
+          <input
+            id="password"
+            v-model="password"
+            type="password"
+            autocomplete="current-password"
+            maxlength="72"
+            :placeholder="t('login.passwordPlaceholder')"
+            required
+            :disabled="authStore.isLoading"
+            :aria-invalid="Boolean(authStore.error)"
+            :aria-describedby="authStore.error ? 'login-error' : 'login-hint'"
+          />
+        </div>
+
         <button type="submit" class="btn btn--primary login-submit" :disabled="authStore.isLoading">
           <LogIn aria-hidden="true" />
           {{ authStore.isLoading ? t('login.loggingIn') : t('login.loginButton') }}
@@ -45,12 +61,12 @@
         </p>
 
         <p id="login-hint" class="hint">
-          {{ t('login.hint') }}
+          {{ configStore.isMockMode ? t('login.hint') : t('login.liveHint') }}
         </p>
       </form>
 
       <p class="demo-info">
-        {{ t('login.mockAuthInfo') }}
+        {{ configStore.isMockMode ? t('login.mockAuthInfo') : t('login.liveAuthInfo') }}
       </p>
     </div>
   </div>
@@ -61,7 +77,8 @@ import { ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { ArrowLeft, LogIn } from 'lucide-vue-next'
-import { useAuthStore } from '@/stores/authStore'
+import { useAuthStore, DEMO_PASSWORD } from '@/stores/authStore'
+import { useConfigStore } from '@/stores/configStore'
 import { localizeError } from '@/utils/localizedMessages'
 import LocaleSelect from '@/components/common/LocaleSelect.vue'
 
@@ -69,9 +86,11 @@ const router = useRouter()
 const route = useRoute()
 const { t } = useI18n()
 const authStore = useAuthStore()
+const configStore = useConfigStore()
 
 // 이메일 입력
 const email = ref('demo@finlab.app')
+const password = ref(configStore.isMockMode ? DEMO_PASSWORD : '')
 
 // 로그인 전 요청했던 앱 내부 경로로 복귀 (외부 URL은 무시)
 function redirectTarget(): string {
@@ -85,11 +104,16 @@ function redirectTarget(): string {
 // 로그인 처리
 async function handleLogin() {
   authStore.clearError()
+  const isMockLogin = configStore.isMockMode
+  let success = false
 
-  const success = await authStore.login(email.value)
-
-  if (success) {
-    router.push(redirectTarget())
+  try {
+    success = await authStore.login(email.value, password.value)
+    if (success) {
+      router.push(redirectTarget())
+    }
+  } finally {
+    password.value = isMockLogin && configStore.isMockMode && !success ? DEMO_PASSWORD : ''
   }
 }
 

@@ -1,0 +1,12 @@
+{
+  "id": 0,
+  "portfolioId": 1,
+  "asOf": "2024-01-02T14:30:00Z",
+  "totalValue": 31930.3,
+  "cash": 0,
+  "pnlDaily": 0,
+  "pnlYTD": 0,
+  "volatility": 3.97,
+  "sharpe": 5.4106641762,
+  "maxDrawdown": 2.1
+}

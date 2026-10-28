@@ -186,3 +186,8 @@ secrets.json
 
 # Vercel
 .vercel
+
+# Maven and local PostgreSQL / RSA material
+backend/target/
+backend/.local/
+backend/*.pem

@@ -5,16 +5,18 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.6-blue.svg)](https://www.typescriptlang.org/)
 [![Vue 3](https://img.shields.io/badge/Vue-3.5-brightgreen.svg)](https://vuejs.org/)
 [![Vite](https://img.shields.io/badge/Vite-7.1-purple.svg)](https://vitejs.dev/)
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](../LICENSE)
 
 ## 📋 프로젝트 개요
 
-FinLab은 실전 fintech 역량을 시연하기 위한 포트폴리오 관리 데모 애플리케이션입니다. 백엔드 없이 동작하는 Mock API를 통해 IndexedDB에 데이터를 저장하며, 실제 금융 로직(FIFO, Sharpe ratio, DCA 백테스팅)을 구현합니다.
+FinLab은 포트폴리오 관리와 백테스팅을 제공하는 Vue 3 애플리케이션입니다. Mock 모드에서는 IndexedDB에 데이터를 저장하고, Live 모드에서는 Spring Boot + PostgreSQL 백엔드의 `/v1/*` API를 호출합니다. FIFO 손익, Sharpe ratio, DCA 백테스팅을 구현합니다.
+
+전체 실행 방법과 검증 결과는 [프로젝트 README](../README.md), 서버 설정은 [백엔드 README](../backend/README.md)를 참고하세요.
 
 ### 주요 특징
 
 - ✅ **오프라인 우선**: IndexedDB를 활용한 완전한 클라이언트 사이드 데이터 저장
-- ✅ **Mock API**: Zod 기반 타입 안전 API (백엔드 없이 동작)
+- ✅ **Mock/Live API**: 두 모드에서 공유하는 Zod 응답 스키마
 - ✅ **FIFO 회계**: First-In-First-Out 방식의 정확한 손익 계산
 - ✅ **백테스팅**: Web Worker 기반 DCA vs Lump-sum 전략 비교
 - ✅ **리스크 메트릭**: Sharpe ratio, 변동성, 최대 낙폭 분석 (Metrics Worker)
@@ -53,9 +55,6 @@ npm run coverage
 
 ```
 frontend/
-├── docs/                          # 문서
-│   ├── TODO.md                   # 작업 진행 상황
-│   └── IMPLEMENTATION_NOTES_*.md # 구현 기록
 ├── public/
 │   └── data/
 │       ├── ohlcv/               # 샘플 시장 데이터 (AAPL, SPY)
@@ -71,7 +70,7 @@ frontend/
 │   │   ├── BacktestLabPage.vue
 │   │   └── ...
 │   ├── services/
-│   │   ├── api/                # Mock API 클라이언트
+│   │   ├── api/                # Mock/Live API 클라이언트
 │   │   │   ├── schemas.ts      # Zod 스키마
 │   │   │   ├── mockClient.ts   # Mock API 구현
 │   │   │   └── index.ts
@@ -118,7 +117,7 @@ frontend/
 
 ### 개발 도구
 
-- **Vitest 3.2** - 단위 테스트 (14/14 테스트 통과)
+- **Vitest** - 단위·컴포넌트·계약 테스트
 - **Happy-DOM** - 가벼운 DOM 환경
 - **ESLint + Prettier** - 코드 품질
 
@@ -131,7 +130,6 @@ frontend/
 - 🚧 **Phase 5** – 라이트하우스 튜닝 및 Chart.js 기반 대시보드 고도화 예정
 - [ ] Swagger UI 통합 (API Playground)
 - [ ] 백엔드 모드 토글 (mock ↔ live)
-- [ ] Spring Boot 백엔드 (OpenAPI 생성)
 - [ ] 에러 바운더리 및 토스트 시스템
 
 #### Phase 5: Launch Prep
@@ -156,13 +154,15 @@ npm run test:ui
 npm run coverage
 ```
 
-### 현재 테스트 커버리지
+### 테스트 범위
 
-- **FIFO Calculator**: 14/14 테스트 통과
+- **FIFO Calculator**: 단일·복수 매수와 매도, 수수료, 손익 계산 검증
   - 단일/복수 매수 처리
   - FIFO 매도 로직
   - 미실현 손익 계산
   - 복합 시나리오
+
+전체 테스트 수와 실행 결과는 [최신 검증 기록](../backend/docs/verification-2026-10-28.md)을 참고하세요.
 
 ## 📊 데이터 모델
 
@@ -265,15 +265,20 @@ npm run build
 ### 환경 변수
 
 ```bash
-# .env.local (예제)
-VITE_API_BASE_URL=http://localhost:8080  # 실제 백엔드 사용 시
-VITE_MODE=mock  # mock | live
+# 공개 데모 빌드: Mock 모드만 허용
+VITE_DEMO_ONLY=true npm run build
+
+# 로컬 개발: Mock/Live 전환 허용
+VITE_DEMO_ONLY=false npm run dev
 ```
+
+Live 모드와 백엔드 URL은 랜딩 화면이나 상단 설정에서 선택합니다. 기본 URL은 `http://localhost:8080`이며 환경 변수로 API URL을 설정하지 않습니다. 로컬 서버 시작 방법은 [백엔드 README](../backend/README.md)를 참고하세요.
 
 ## 📝 문서
 
-- [TODO.md](docs/TODO.md) - 작업 진행 상황
-- [IMPLEMENTATION_NOTES_20251002.md](docs/IMPLEMENTATION_NOTES_20251002.md) - 구현 기록
+- [프로젝트 README](../README.md) - 개요, 실행 방법, 검증 결과
+- [문서 허브](../docs/README.md) - 현재 문서와 과거 계획
+- [아키텍처](../docs/architecture.md) - Mock/Live 데이터 흐름
 - [PRD.md](../PRD.md) - 제품 요구사항 문서
 
 ## 🤝 기여

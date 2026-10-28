@@ -43,6 +43,14 @@ describe('configStore', () => {
     expect(store.backendMode).toBe('mock')
   })
 
+  it('defaults live connections to the documented local backend and preserves explicit overrides', () => {
+    const store = useConfigStore()
+    expect(store.backendUrl).toBe('http://localhost:8080')
+    localStorage.setItem('finlab_backend_url', 'https://example.test')
+    store.restore()
+    expect(store.backendUrl).toBe('https://example.test')
+  })
+
   it('defaults to English locale when no stored locale exists', () => {
     const store = useConfigStore()
     store.restore()

@@ -1,0 +1,9 @@
+# Local/test profiles generate an ephemeral RSA pair unless PEM resources are configured.
+# Run a local PostgreSQL server; this application never starts a database itself.
+spring:
+  flyway:
+    locations: classpath:db/migration,classpath:db/demo
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/finlab}
+    username: ${DB_USERNAME:finlab}
+    password: ${DB_PASSWORD:}

@@ -1,0 +1,9 @@
+{
+  "type": "urn:finlab:problem:idempotency-key-reused",
+  "title": "Unprocessable Content",
+  "status": 422,
+  "detail": "Idempotency-Key was used with a different request",
+  "instance": "/v1/portfolios",
+  "code": "IDEMPOTENCY_KEY_REUSED",
+  "message": "Idempotency-Key was used with a different request"
+}
