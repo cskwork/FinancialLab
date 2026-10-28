@@ -15,6 +15,8 @@ const KOREAN_SOURCE = new Map(Object.entries(ko.errors.known).map(([key, value])
 
 // 워커와 CSV 검증의 영어 고정 문구
 const ENGLISH_SOURCE: Record<string, string> = {
+  'endDate must be on or after startDate': 'errors.validation.planDateOrder',
+  'must not be blank': 'errors.validation.required',
   'No returns data': 'errors.worker.noReturnsData',
   'No candles available': 'errors.worker.noCandles',
   'Insufficient candle data': 'errors.worker.insufficientCandles',
@@ -41,6 +43,7 @@ const PATTERNS: Array<[RegExp, (match: RegExpMatchArray) => string]> = [
 /** 알려진 앱 오류 문구는 현재 언어로, 그 밖의 원문(서버 응답 등)은 그대로 반환한다. */
 export function localizeError(message: string | null | undefined): string {
   if (!message) return ''
+  if (message.includes('\n')) return message.split('\n').map((reason) => localizeError(reason)).join('\n')
   const key = KOREAN_SOURCE.get(message) ?? ENGLISH_SOURCE[message]
   if (key) return t(key)
   for (const [pattern, render] of PATTERNS) {

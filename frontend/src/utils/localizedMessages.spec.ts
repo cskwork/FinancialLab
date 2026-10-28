@@ -74,6 +74,15 @@ describe('localizeError', () => {
     expect(localizeError('upstream 502: bad gateway')).toBe('upstream 502: bad gateway')
     expect(localizeError(null)).toBe('')
   })
+
+  it('localizes each field validation reason without discarding additional errors', () => {
+    useLocale('en')
+    expect(localizeError('endDate must be on or after startDate\nmust not be blank')).toBe(
+      'End date must be on or after the start date\nThis field is required'
+    )
+    useLocale('ko')
+    expect(localizeError('endDate must be on or after startDate')).toBe('종료일은 시작일과 같거나 이후여야 합니다')
+  })
 })
 
 describe('failureMessage', () => {
