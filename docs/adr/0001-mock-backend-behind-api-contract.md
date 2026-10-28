@@ -31,6 +31,9 @@ must work with no server, no account, and no network calls for data.
   and nothing yet checks that both sides agree.
 - `apiClient.ts` repeats the mock/live branch in every method (18 endpoints), which is verbose but keeps each call
   explicit.
+- Metric arithmetic is shared with the worker through `frontend/src/utils/metrics.ts`; both convert the annual
+  decimal risk-free rate to daily percent before calculating Sharpe.
+- Historical backend plans live in [planned/](../planned/); they are not shipped server documentation.
 - Errors never throw across the boundary; every caller handles `success: false`.
 
 ## Alternatives considered

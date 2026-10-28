@@ -17,7 +17,8 @@ repository** (see [Backend status](#backend-status)).
 | API contract | `frontend/src/services/api/schemas.ts`, `frontend/public/docs/openapi.json` | Zod request/response schemas; OpenAPI description of the `/v1/*` endpoints. |
 | Mock backend | `frontend/src/services/api/mockClient.ts` | Implements the contract over IndexedDB: validation, FIFO ledger checks, holdings, metrics, goals, plans, market data. |
 | Persistence | `frontend/src/services/db/schema.ts`, `frontend/src/services/db/repositories/` | Dexie database `FinLabDB` (schema v1) with tables `users`, `portfolios`, `transactions`, `holdings`, `goals`, `plans`, `candles` (compound index `[symbol+date]`), `metricSnapshots`. One repository class per aggregate. |
-| Domain logic | `frontend/src/utils/fifoCalculator.ts` | FIFO lot matching with `decimal.js`; throws on incomplete BUY/SELL rows and on overselling. |
+| Domain logic | `frontend/src/utils/fifoCalculator.ts` | FIFO lot matching with `decimal.js`; buy fees are allocated per share in each lot, sell fees reduce realized proceeds (`getSales()`); throws on incomplete BUY/SELL rows and on overselling. |
+| Shared metrics | `frontend/src/utils/metrics.ts` | Pure percent-return metrics shared by the worker and mock API; annual risk-free decimal rate is converted to daily percent (`rate * 100 / 252`). |
 | Seeding | `frontend/src/utils/seedLoader.ts` | Loads OHLCV CSVs from `frontend/public/data/ohlcv/` and the bundled `sample-transactions.json`; idempotent and non-destructive. |
 | Workers | `frontend/src/workers/backtestWorker.ts`, `metricsWorker.ts`, `csvImportWorker.ts` | DCA vs lump-sum simulation; volatility, Sharpe, max drawdown; CSV parsing with PapaParse + `utils/csvImport.ts`. |
 
@@ -45,13 +46,36 @@ ledger was already broken (so pre-validation data can still be repaired).
 
 `BacktestLabPage` reads candles for the chosen symbol and date range from IndexedDB, requires at least 10 candles,
 and posts them to `backtestWorker`. The worker returns both strategies and a comparison; `utils/equityCurve.ts`
-turns the trades into the equity chart.
+turns the trades into the equity chart. The worker sorts a copy of price rows by date, buying at the first available
+close in each ISO week (Monday start) or calendar month, including a partial first period. Missing periods create no
+trade. Both strategies are valued at the last close; backtests do not model fees or slippage.
 
 ### Startup and seeding
 
 `main.ts` awaits `initializeSeedData()` (one shared promise). It fills `candles` if the table is empty and ensures a
 portfolio named `FinLab 샘플 포트폴리오 (2024)` with the 10 sample transactions, two goals and two plans exists for
 `demo@finlab.app`. See [ADR 0003](adr/0003-idempotent-non-destructive-demo-seeding.md).
+
+## Verified demo figure changes (2026-10-28)
+
+Inputs are the unchanged bundled transactions and full 2024-01-02–2024-04-01 price range. Figures below are
+rounded for display; regression tests assert the fee-inclusive holdings, realized sales, SPY DCA and corrected
+Sharpe (`fifoCalculator.spec.ts`, `backtestWorker.spec.ts`, `metrics.spec.ts`). Old figures were recomputed with
+fees omitted, the decimal risk-free subtraction, and 30-row monthly stepping respectively.
+
+| Calculation | Before | After |
+|-------------|--------|-------|
+| AAPL average FIFO cost (90 shares) | $194.981111 | $195.039444 |
+| SPY average FIFO cost (25 shares) | $480.56 | $480.63 |
+| AAPL / SPY unrealized PnL at last close | $1,628 / $740 | $1,622.75 / $738.25 |
+| Total unrealized PnL | $2,368 | $2,361 |
+| AAPL / SPY realized PnL in calculator (not dashboard) | $233.40 / $315.30 | $231.15 / $313.55 |
+| Portfolio annualized Sharpe (default 2% annual risk-free) | 5.654311 | 5.410664 |
+| SPY monthly DCA, $100 per purchase: count / invested / final value | 3 / $300 / $312.55 | 4 / $400 / $416.31 |
+
+Fees leave share counts and marked holding value ($31,930.30) unchanged. SPY DCA now buys January 2, February 1,
+March 1 and April 1, rather than January 2, February 14 and March 28. DCA's changed final value includes an extra
+$100 contribution; it is not a like-for-like performance gain.
 
 ## Backend status
 
@@ -83,7 +107,7 @@ cross-origin `connect-src`, so the public demo never calls a backend.
 ## External dependencies
 
 Runtime (from `frontend/package.json`): Vue 3, Vue Router 4, Pinia 3, vue-i18n 9, Dexie 4, Zod 4, decimal.js,
-PapaParse, Chart.js 4, lucide-vue-next, Fontsource fonts. Test: Vitest 3, happy-dom, fake-indexeddb.
+PapaParse, Chart.js 4, lucide-vue-next, Fontsource fonts. Test: Vitest 4, happy-dom 21, fake-indexeddb.
 Hosting: Vercel (`vercel.json`); a GitHub Pages workflow also exists (`.github/workflows/deploy.yml`).
 No network APIs are called in mock mode; sample prices are static files in `frontend/public/data/`.
 
@@ -102,11 +126,10 @@ No network APIs are called in mock mode; sample prices are static files in `fron
 | Too little price data for a backtest | Warning toast when fewer than 10 candles. | `BacktestLabPage.vue` |
 | Component render error | `ErrorBoundary` component. | `components/layout/ErrorBoundary.vue` |
 
-## Known gaps
+## Limitations
 
-- DCA intervals step by candle count (7 / 30 rows), not calendar weeks or months (`backtestWorker.ts`).
-- Sharpe subtracts a decimal risk-free rate from percent returns, so the risk-free rate counts 100× too little
-  (`metricsWorker.ts`, `mockClient.ts`).
-- Metric functions are duplicated between `metricsWorker.ts` and `mockClient.ts`.
-- `composables/useBacktest.ts` is not used by any page.
-- Transaction fees are stored but not included in FIFO cost basis.
+- Only bundled sample prices are available in mock mode (`frontend/public/data/ohlcv/`).
+- DCA and lump-sum can use different total contributions; backtests do not model fees or slippage.
+- Portfolio metrics use current market-value weights over the available price history (`analyticsStore.ts`,
+  `mockClient.ts`), rather than replaying historical cash flows.
+- Historical backend design documents are isolated under [planned/](planned/); they describe no shipped server.

@@ -1,3 +1,7 @@
+Planned backend — not implemented in this repository.
+
+Historical design/reference material; it is not a description of the shipped frontend. See [current architecture](../architecture.md).
+
 # FinLab 개발자 가이드
 
 ## 목차

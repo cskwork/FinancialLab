@@ -1,3 +1,7 @@
+Planned backend — not implemented in this repository.
+
+Historical design/reference material; it is not a description of the shipped frontend. See [current architecture](../architecture.md).
+
 # FinLab 문제 해결 가이드
 
 ## 목차
@@ -683,4 +687,4 @@ Failed to fetch: Network request failed
 **관련 문서**
 - [Configuration Guide](CONFIGURATION-GUIDE.md)
 - [Developer Guide](DEVELOPER-GUIDE.md)
-- [User Guide](USER-GUIDE.md)
+- [User Guide](../USER-GUIDE.md)
