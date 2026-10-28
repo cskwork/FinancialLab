@@ -103,7 +103,17 @@
       "liveUrlMissing": "The live backend URL is not set.",
       "liveCallFailed": "The live backend call failed.",
       "schemaValidationFailed": "Response schema validation failed",
-      "networkError": "A network error occurred."
+      "networkError": "A network error occurred.",
+      "loginCredentialsRequired": "Enter your email and password",
+      "loginPasswordRequired": "Enter your password",
+      "loginPasswordTooLong": "Password must be at most 72 UTF-8 bytes",
+      "invalidCredentials": "Email or password is incorrect",
+      "authenticationRequired": "Authentication is required",
+      "tooManyLoginAttempts": "Too many login attempts. Please try again shortly",
+      "loginRequestsInProgress": "Login requests are being processed. Please try again shortly",
+      "dataConflict": "A data conflict occurred. Please try again",
+      "resourceNotFound": "The resource was not found",
+      "dataIntegrity": "A data integrity constraint was violated"
     },
     "worker": {
       "unknown": "An unknown error occurred.",
@@ -115,6 +125,10 @@
       "sellExceeds": "{symbol} sell quantity exceeds shares held",
       "noShares": "No shares of {symbol} are held",
       "deleteBlocked": "This transaction cannot be deleted because a later sell depends on it ({detail})"
+    },
+    "validation": {
+      "planDateOrder": "End date must be on or after the start date",
+      "required": "This field is required"
     }
   },
   "nav": {
@@ -190,9 +204,13 @@
     "emailPlaceholder": "{'demo@finlab.app'}",
     "loginButton": "Login",
     "loggingIn": "Logging in...",
-    "hint": "Hint: Try {'demo@finlab.app'} or any valid email",
-    "mockAuthInfo": "Mock Authentication - No password required. Any email creates/logs into a user.",
-    "backHome": "Back to the FinLab cover"
+    "hint": "Mock demo credentials are prefilled. Click Login to enter.",
+    "mockAuthInfo": "Mock mode accepts any nonempty password and never saves it. Live mode verifies your password on the backend.",
+    "backHome": "Back to the FinLab cover",
+    "password": "Password",
+    "passwordPlaceholder": "Enter your password",
+    "liveHint": "Demo account: {'demo@finlab.app'} / FinLabDemo!2026",
+    "liveAuthInfo": "Your password is sent only to the configured backend for verification and is never saved in this browser."
   },
   "dashboard": {
     "title": "Dashboard",
@@ -226,7 +244,7 @@
     "sharesUnit": "shares",
     "sampleNotice": "Local demo · Based on 2024 sample prices. Not live quotes or account balances.",
     "retry": "Retry loading",
-    "tableHint": "Scroll horizontally to see every column. Average cost excludes fees.",
+    "tableHint": "Scroll horizontally to see every column. Average cost includes buy fees.",
     "emptyPortfolio": "“{name}” has no transactions yet. Holdings, total value and risk metrics are calculated once transactions are recorded.",
     "viewSamplePortfolio": "View sample portfolio",
     "openingSample": "Opening sample portfolio...",
@@ -492,7 +510,7 @@
     "unrealizedPnL": "Unrealized PnL is the profit or loss on current holdings based on current market price versus cost basis, not yet realized by selling.",
     "dailyPnL": "Daily PnL is the dollar and percentage change in portfolio value compared to the previous trading day's close.",
     "weight": "Weight is the percentage of total portfolio market value held in this asset.",
-    "avgCost": "Average cost basis per share across currently held lots (excluding fees).",
+    "avgCost": "Average cost basis per share across currently held lots (including buy fees).",
     "marketValue": "Current market value is shares held multiplied by the latest market price.",
     "initialCapital": "Initial capital available at the start of the simulation.",
     "dcaAmount": "Fixed amount invested periodically at each interval.",

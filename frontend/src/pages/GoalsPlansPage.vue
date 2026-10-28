@@ -44,11 +44,11 @@
           </div>
           <div class="field">
             <label for="goal-target">{{ t('goals.targetAmountUsd') }}</label>
-            <input id="goal-target" v-model.number="goalForm.targetAmount" type="number" min="1" step="100" required />
+            <input id="goal-target" v-model.number="goalForm.targetAmount" type="number" min="0.0001" step="0.0001" required />
           </div>
           <div class="field">
             <label for="goal-current">{{ t('goals.currentAmount') }}</label>
-            <input id="goal-current" v-model.number="goalForm.currentAmount" type="number" min="0" step="100" />
+            <input id="goal-current" v-model.number="goalForm.currentAmount" type="number" min="0" step="0.0001" />
           </div>
           <div class="field">
             <label for="goal-date">{{ t('goals.targetDate') }}</label>
@@ -134,7 +134,7 @@
           </div>
           <div class="field">
             <label for="plan-amount">{{ t('goals.amountPerIntervalUsd') }}</label>
-            <input id="plan-amount" v-model.number="planForm.amountPerInterval" type="number" min="1" step="10" required />
+            <input id="plan-amount" v-model.number="planForm.amountPerInterval" type="number" min="0.0001" step="0.0001" required />
           </div>
           <div class="field">
             <label for="plan-interval">{{ t('goals.interval') }}</label>
@@ -256,13 +256,15 @@ const planForm = reactive({
 
 async function ensurePortfolio() {
   if (!authStore.isAuthenticated) {
-    router.push('/login')
+    router.push({ path: '/login', query: { redirect: router.currentRoute.value.fullPath } })
     return false
   }
   // 새로고침으로 직접 진입한 경우 포트폴리오를 먼저 불러온다 (대시보드로 튕기지 않도록)
   if (!portfolioStore.currentPortfolio) {
     await portfolioStore.fetchPortfolios()
   }
+  // A failed request can expire the session and already navigate to login.
+  if (!authStore.isAuthenticated) return false
   if (!portfolioStore.currentPortfolio) {
     router.push('/dashboard')
     return false

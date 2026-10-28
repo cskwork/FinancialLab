@@ -18,7 +18,11 @@ export type ApiError = z.infer<typeof ApiErrorSchema>
 // ========== Auth Schemas ==========
 
 export const LoginRequestSchema = z.object({
-  email: z.string().email('유효한 이메일 주소를 입력하세요')
+  email: z.string().email('유효한 이메일 주소를 입력하세요'),
+  password: z.string().min(1, '비밀번호를 입력하세요')
+    .max(72, '비밀번호는 UTF-8 기준 72바이트 이하여야 합니다')
+    .refine((password) => new TextEncoder().encode(password).length <= 72,
+      '비밀번호는 UTF-8 기준 72바이트 이하여야 합니다')
 })
 
 export const LoginResponseSchema = z.object({

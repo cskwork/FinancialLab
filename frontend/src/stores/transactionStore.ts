@@ -70,12 +70,12 @@ export const useTransactionStore = defineStore('transaction', () => {
   /**
    * 거래 생성
    */
-  async function createTransaction(request: CreateTransactionRequest): Promise<boolean> {
+  async function createTransaction(request: CreateTransactionRequest, idempotencyKey?: string): Promise<boolean> {
     isLoading.value = true
     error.value = null
 
     try {
-      const response = await apiClient.createTransaction(request, authStore.token)
+      const response = await apiClient.createTransaction(request, authStore.token, idempotencyKey)
 
       if (response.success && response.data) {
         transactions.value.push(response.data)

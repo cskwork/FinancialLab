@@ -7,6 +7,8 @@ import { z } from 'zod'
 import { useConfigStore } from '@/stores/configStore'
 import { mockApiClient, type ApiResponse } from './mockClient'
 import {
+  ApiErrorSchema,
+  LoginRequestSchema,
   LoginResponseSchema,
   PortfolioResponseSchema,
   TransactionResponseSchema,
@@ -17,6 +19,7 @@ import {
   CandleResponseSchema
 } from './schemas'
 import type {
+  ApiError,
   LoginRequest,
   LoginResponse,
   CreatePortfolioRequest,
@@ -42,9 +45,55 @@ interface LiveRequestOptions<T> {
   body?: unknown
   query?: Record<string, string | number | undefined>
   schema?: z.ZodType<T>
+  headers?: Record<string, string>
 }
 
-async function liveRequest<T>({ method, path, token, body, query, schema }: LiveRequestOptions<T>): Promise<ApiResponse<T>> {
+async function readProblem(response: Response): Promise<ApiError> {
+  const fallback = { code: `HTTP_${response.status}`, message: '라이브 백엔드 호출이 실패했습니다.' }
+  const mediaType = response.headers.get('Content-Type')?.split(';')[0]?.trim().toLowerCase()
+  if (mediaType !== 'application/problem+json') return fallback
+
+  try {
+    const parsed = ApiErrorSchema.safeParse(await response.json())
+    if (parsed.success && parsed.data.code.trim() && parsed.data.message.trim()) {
+      const fieldErrors = parsed.data.details?.fieldErrors
+      if (fieldErrors && typeof fieldErrors === 'object' && !Array.isArray(fieldErrors)) {
+        const reasons = Object.values(fieldErrors).flatMap((value) =>
+          (Array.isArray(value) ? value : [value]).filter(
+            (reason): reason is string => typeof reason === 'string' && reason.trim().length > 0
+          )
+        )
+        if (reasons.length) return { ...parsed.data, message: [...new Set(reasons)].join('\n') }
+      }
+      return parsed.data
+    }
+  } catch {
+    // Proxies and interrupted responses may not contain a readable problem body.
+  }
+  return fallback
+}
+
+let sessionExpiration: Promise<void> | null = null
+
+async function expireSession(): Promise<void> {
+  if (sessionExpiration) return sessionExpiration
+  sessionExpiration = (async () => {
+    // Deferred imports keep the API client independent of store/router initialization.
+    const { default: router } = await import('@/app/router')
+    const route = router.currentRoute.value
+    const redirect = route.fullPath
+    const { useAuthStore } = await import('@/stores/authStore')
+    useAuthStore().logout()
+    if (route.path !== '/login') await router.replace({ path: '/login', query: { redirect } })
+  })()
+  try {
+    await sessionExpiration
+  } finally {
+    sessionExpiration = null
+  }
+}
+
+async function liveRequest<T>({ method, path, token, body, query, schema, headers }: LiveRequestOptions<T>): Promise<ApiResponse<T>> {
   const configStore = useConfigStore()
   const baseUrl = configStore.backendUrl.replace(/\/$/, '')
 
@@ -73,20 +122,16 @@ async function liveRequest<T>({ method, path, token, body, query, schema }: Live
       headers: {
         'Content-Type': 'application/json',
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        'X-Request-Id': crypto.randomUUID()
+        'X-Request-Id': crypto.randomUUID(),
+        ...headers
       },
       body: body ? JSON.stringify(body) : undefined
     })
 
     if (!response.ok) {
-      const errorText = await response.text()
-      return {
-        success: false,
-        error: {
-          code: `HTTP_${response.status}`,
-          message: errorText || '라이브 백엔드 호출이 실패했습니다.'
-        }
-      }
+      const error = await readProblem(response)
+      if (response.status === 401 && path !== '/v1/auth/login') await expireSession()
+      return { success: false, error }
     }
 
     const json = await response.json()
@@ -125,7 +170,7 @@ async function liveRequest<T>({ method, path, token, body, query, schema }: Live
 }
 
 export interface ApiClientInterface {
-  login(request: LoginRequest): Promise<ApiResponse<LoginResponse>>
+  login(request: LoginRequest | Pick<LoginRequest, 'email'>): Promise<ApiResponse<LoginResponse>>
   getPortfolios(userId: number, token?: string | null): Promise<ApiResponse<PortfolioResponse[]>>
   getPortfolio(id: number, token?: string | null): Promise<ApiResponse<PortfolioResponse>>
   createPortfolio(
@@ -146,7 +191,8 @@ export interface ApiClientInterface {
   ): Promise<ApiResponse<TransactionResponse[]>>
   createTransaction(
     request: CreateTransactionRequest,
-    token?: string | null
+    token?: string | null,
+    idempotencyKey?: string
   ): Promise<ApiResponse<TransactionResponse>>
   deleteTransaction(id: number, token?: string | null): Promise<ApiResponse<void>>
   getHoldings(portfolioId: number, token?: string | null): Promise<ApiResponse<HoldingResponse[]>>
@@ -160,17 +206,27 @@ export interface ApiClientInterface {
   getMarketData(query: MarketDataQuery, token?: string | null): Promise<ApiResponse<CandleResponse[]>>
 }
 
+// A failed request can be retried using the same object without creating another ledger entry.
+// Form callers provide an explicit key to retain the submit identity across reconstructed objects.
+const transactionSubmissions = new WeakMap<CreateTransactionRequest, { body: string; key: string }>()
+
 export const apiClient: ApiClientInterface = {
   async login(request) {
     const config = useConfigStore()
     if (config.isMockMode) {
       return mockApiClient.login(request)
     }
-
+    const validated = LoginRequestSchema.safeParse(request)
+    if (!validated.success) {
+      return {
+        success: false,
+        error: { code: 'VALIDATION_ERROR', message: '이메일과 비밀번호를 입력하세요' }
+      }
+    }
     return liveRequest<LoginResponse>({
       method: 'POST',
       path: '/v1/auth/login',
-      body: request,
+      body: validated.data,
       schema: LoginResponseSchema
     })
   },
@@ -262,19 +318,26 @@ export const apiClient: ApiClientInterface = {
     })
   },
 
-  async createTransaction(request, token) {
+  async createTransaction(request, token, idempotencyKey) {
     const config = useConfigStore()
     if (config.isMockMode) {
       return mockApiClient.createTransaction(request)
     }
 
-    return liveRequest<TransactionResponse>({
+    const body = JSON.stringify(request)
+    const previous = transactionSubmissions.get(request)
+    const key = idempotencyKey ?? (previous?.body === body ? previous.key : crypto.randomUUID())
+    if (!idempotencyKey) transactionSubmissions.set(request, { body, key })
+    const result = await liveRequest<TransactionResponse>({
       method: 'POST',
       path: `/v1/portfolios/${request.portfolioId}/transactions`,
       token,
       body: request,
+      headers: { 'Idempotency-Key': key },
       schema: TransactionResponseSchema
     })
+    if (result.success) transactionSubmissions.delete(request)
+    return result
   },
 
   async deleteTransaction(id, token) {

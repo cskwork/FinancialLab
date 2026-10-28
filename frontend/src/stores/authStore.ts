@@ -8,6 +8,10 @@ import { ref, computed } from 'vue'
 import { apiClient } from '@/services/api'
 import type { LoginResponse } from '@/services/api/schemas'
 import { logger } from '@/utils/logger'
+import { useConfigStore } from '@/stores/configStore'
+
+// Public demo credential, never used as a default for live authentication.
+export const DEMO_PASSWORD = 'FinLabDemo!2026'
 
 export const useAuthStore = defineStore('auth', () => {
   // State
@@ -26,12 +30,15 @@ export const useAuthStore = defineStore('auth', () => {
   /**
    * 로그인
    */
-  async function login(email: string): Promise<boolean> {
+  async function login(email: string, password?: string): Promise<boolean> {
     isLoading.value = true
     error.value = null
 
     try {
-      const response = await apiClient.login({ email })
+      const response = await apiClient.login({
+        email,
+        password: password ?? (useConfigStore().isMockMode ? DEMO_PASSWORD : '')
+      })
 
       if (response.success && response.data) {
         user.value = response.data

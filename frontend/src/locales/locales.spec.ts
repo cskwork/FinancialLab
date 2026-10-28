@@ -30,6 +30,12 @@ const sources = import.meta.glob(['../**/*.ts', '../**/*.vue', '!../**/*.spec.ts
 }) as Record<string, string>
 
 describe('locale files', () => {
+  it('describes FIFO average cost as including buy fees in every locale', () => {
+    expect(en.dashboard.tableHint).toContain('includes buy fees')
+    expect(en.terms.avgCost).toContain('including buy fees')
+    expect(ko.dashboard.tableHint).toContain('매수 수수료를 포함')
+    expect(ko.terms.avgCost).toContain('매수 수수료 포함')
+  })
   it('have the same keys in both directions', () => {
     const missingInEn = [...koFlat.keys()].filter((key) => !enFlat.has(key))
     const missingInKo = [...enFlat.keys()].filter((key) => !koFlat.has(key))
