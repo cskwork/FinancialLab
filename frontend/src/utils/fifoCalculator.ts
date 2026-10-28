@@ -42,6 +42,7 @@ export interface SaleResult {
 export class FifoCalculator {
   // symbol -> Holding 매핑
   private holdings: Map<string, Holding>
+  private sales: SaleResult[] = []
 
   constructor() {
     this.holdings = new Map()
@@ -57,12 +58,13 @@ export class FifoCalculator {
     )
 
     this.holdings.clear()
+    this.sales = []
 
     for (const tx of sorted) {
       if (tx.type === 'BUY') {
         this.addBuyTransaction(tx)
       } else if (tx.type === 'SELL') {
-        this.addSellTransaction(tx)
+        this.sales.push(this.addSellTransaction(tx))
       }
       // DEPOSIT/WITHDRAW는 holdings에 영향 없음
     }
@@ -80,7 +82,8 @@ export class FifoCalculator {
 
     const symbol = tx.symbol
     const qty = new Decimal(tx.qty)
-    const price = new Decimal(tx.price)
+    // Allocate the buy fee per share so partial FIFO sales retain their share of it.
+    const price = new Decimal(tx.price).plus(new Decimal(tx.fee).dividedBy(qty))
 
     // 기존 holding 조회 또는 생성
     let holding = this.holdings.get(symbol)
@@ -168,7 +171,7 @@ export class FifoCalculator {
     }
 
     // 실현 손익 계산
-    const proceeds = sellQty.times(sellPrice)
+    const proceeds = sellQty.times(sellPrice).minus(tx.fee)
     const realizedPnL = proceeds.minus(totalCostBasis)
 
     return {
@@ -202,9 +205,12 @@ export class FifoCalculator {
     holding.avgCost = totalCost.dividedBy(totalShares).toNumber()
   }
 
-  /**
-   * 현재 holdings 조회
-   */
+  /** Realized FIFO sales from the most recent ledger replay. */
+  getSales(): SaleResult[] {
+    return this.sales.map((sale) => ({ ...sale }))
+  }
+
+  /** 현재 holdings 조회 */
   getHoldings(): Map<string, Holding> {
     return this.holdings
   }

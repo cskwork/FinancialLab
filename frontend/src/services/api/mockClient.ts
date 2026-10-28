@@ -16,6 +16,7 @@ import {
 } from '@/services/db/repositories'
 import { calculateHoldingsFromTransactions, type Holding as FifoHolding } from '@/utils/fifoCalculator'
 import * as schemas from './schemas'
+import { calculateMetrics } from '@/utils/metrics'
 
 /**
  * API 응답 래퍼
@@ -152,11 +153,10 @@ function computePortfolioMetrics(
 
   const sortedDates = Array.from(returnByDate.keys()).sort()
   const returns = sortedDates.map((date) => returnByDate.get(date) ?? 0)
-  const avgReturn = calculateAverage(returns)
-  const stdDev = calculateStdDev(returns, avgReturn)
-  const volatility = stdDev * Math.sqrt(252)
-  const sharpe = calculateSharpe(avgReturn, stdDev)
-  const maxDrawdown = calculateMaxDrawdown(returns)
+  // No price history keeps the existing zero snapshot; the worker rejects empty input.
+  const { volatility, sharpeRatio: sharpe, maxDrawdown } = returns.length
+    ? calculateMetrics({ returns })
+    : { volatility: 0, sharpeRatio: 0, maxDrawdown: 0 }
   const pnlDaily = returns.at(-1) ? (returns.at(-1)! / 100) * totalValue : 0
   const cumulativeReturn = returns.reduce(
     (acc, ret) => acc.times(new Decimal(1).plus(ret / 100)),
@@ -176,51 +176,6 @@ function computePortfolioMetrics(
       maxDrawdown
     }
   }
-}
-
-function calculateAverage(values: number[]): number {
-  if (values.length === 0) return 0
-  const sum = values.reduce((acc, value) => acc + value, 0)
-  return sum / values.length
-}
-
-function calculateStdDev(values: number[], mean: number): number {
-  if (values.length === 0) return 0
-  const variance = values.reduce((acc, value) => {
-    const diff = value - mean
-    return acc + diff * diff
-  }, 0) / values.length
-
-  return Math.sqrt(variance)
-}
-
-function calculateSharpe(avgReturn: number, stdDev: number, riskFreeRate = 0.02): number {
-  if (stdDev === 0) return 0
-  const dailyRiskFreeRate = riskFreeRate / 252
-  const excessReturn = avgReturn - dailyRiskFreeRate
-  return (excessReturn / stdDev) * Math.sqrt(252)
-}
-
-function calculateMaxDrawdown(returns: number[]): number {
-  if (returns.length === 0) return 0
-
-  let peak = new Decimal(1)
-  let maxDrawdown = new Decimal(0)
-  let cumulative = new Decimal(1)
-
-  for (const ret of returns) {
-    cumulative = cumulative.times(new Decimal(1).plus(ret / 100))
-    if (cumulative.greaterThan(peak)) {
-      peak = cumulative
-    }
-
-    const drawdown = peak.minus(cumulative).dividedBy(peak).times(100)
-    if (drawdown.greaterThan(maxDrawdown)) {
-      maxDrawdown = drawdown
-    }
-  }
-
-  return maxDrawdown.toNumber()
 }
 
 /**
