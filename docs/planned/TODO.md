@@ -1,6 +1,9 @@
-Planned backend — not implemented in this repository.
-
-Historical design/reference material; it is not a description of the shipped frontend. See [current architecture](../architecture.md).
+> **Superseded (2026-10-28).** This is a pre-implementation plan kept for history. Current documentation:
+> [architecture](../architecture.md), [backend README](../../backend/README.md), [HTTP contract](../../contract/README.md),
+> [ADRs](../adr/README.md).
+>
+> The "Backend Structure" items were delivered as `backend/` (Spring Boot 4, Java 21, Maven), not
+> `backend-samples/spring-boot`. Checkboxes below were not maintained and do not reflect current status.
 
 # FinLab - Implementation TODO
 

@@ -1,6 +1,10 @@
-Planned backend — not implemented in this repository.
-
-Historical design/reference material; it is not a description of the shipped frontend. See [current architecture](../architecture.md).
+> **Superseded (2026-10-28).** This is a pre-implementation plan kept for history. Current documentation:
+> [architecture](../architecture.md), [backend README](../../backend/README.md), [HTTP contract](../../contract/README.md),
+> [ADRs](../adr/README.md).
+>
+> Backend operation (PostgreSQL without Docker, profiles, signing keys) is in
+> [backend/README.md](../../backend/README.md). Some fixes below call APIs that do not exist, such as
+> `authStore.refreshToken()`; there are no refresh tokens.
 
 # FinLab 문제 해결 가이드
 

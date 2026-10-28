@@ -1,6 +1,14 @@
-Planned backend — not implemented in this repository.
-
-Historical design/reference material; it is not a description of the shipped frontend. See [current architecture](../architecture.md).
+> **Superseded (2026-10-28).** This is a pre-implementation plan kept for history. Current documentation:
+> [architecture](../architecture.md), [backend README](../../backend/README.md), [HTTP contract](../../contract/README.md),
+> [ADRs](../adr/README.md).
+>
+> Replaced by the implemented `/v1/*` API (`backend/`, endpoint table in `contract/README.md`, live OpenAPI at
+> `/v3/api-docs`). Differences from this plan: responses are plain JSON, not a `{ data, meta }` envelope; errors are
+> RFC 9457 `ProblemDetail` with `code`/`message`/`details`; login requires a password; market data is
+> `GET /v1/market-data` instead of `/v1/market/symbols` and `/v1/market/candles`.
+>
+> **Still not built:** `POST /v1/portfolios/{id}/transactions/bulk`, `POST /v1/backtests/dca` (backtests run only in
+> the browser worker), and general API rate limiting (only login is rate limited).
 
 # FinLab API Documentation
 

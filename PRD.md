@@ -301,7 +301,7 @@ Compare vs. lump-sum at start date
 ```typescript
 // localStorage keys
 BACKEND_MODE: 'mock' | 'live'
-BACKEND_BASE_URL: string (e.g., 'https://finlab-api.fly.dev')
+BACKEND_BASE_URL: string (e.g., 'http://localhost:8080')
 ```
 
 **API Client Logic:**
@@ -684,7 +684,7 @@ jobs:
 ### Mode Switcher
 ```
 Backend Mode: [Mock ▼] [Live]
-Live URL: [https://finlab-api.fly.dev] [Connect]
+Live URL: [http://localhost:8080] [Connect]
 ```
 
 ### Feature Highlights
@@ -695,7 +695,7 @@ Live URL: [https://finlab-api.fly.dev] [Connect]
 - ☕ Spring Boot evidence (tests, coverage, docs)
 
 ### Footer Note
-> "Educational simulation. No real money. Java backend optional ([deploy guide](link))."
+> "Educational simulation. No real money. Java backend optional ([backend setup guide](backend/README.md))."
 
 ---
 
