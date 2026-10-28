@@ -1,314 +1,93 @@
 # FinLab
 
-> 전문적인 포트폴리오 관리 및 백테스팅 시뮬레이션 플랫폼
+> 2024년 샘플 시세와 가상 거래로 FIFO 원가, 보유 종목, 리스크 지표, 분할 매수 대 일시불 백테스트를 브라우저 안에서 계산해 보는 포트폴리오 시뮬레이터.
 
-[![Vue 3](https://img.shields.io/badge/Vue-3.5-4FC08D?logo=vue.js)](https://vuejs.org/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?logo=typescript)](https://www.typescriptlang.org/)
-[![Vite](https://img.shields.io/badge/Vite-7.1-646CFF?logo=vite)](https://vitejs.dev/)
-[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+**Live demo:** https://financial-lab-six.vercel.app/dashboard (실시간 시세·실제 주문 없음, 데이터는 방문자 브라우저의 IndexedDB에만 저장)
 
-**FinLab**은 Vue 3 기반의 풀스택 금융 기술 데모 애플리케이션으로, 포트폴리오 추적, DCA 백테스팅, 리스크 지표 계산 등의 기능을 제공합니다. 프로덕션급 아키텍처 패턴과 금융 도메인 전문성을 입증하기 위해 설계되었습니다.
+![FinLab](frontend/public/images/og-finlab.jpg)
 
----
+## 해결하는 문제
 
-## 🚀 Live Demo
+FIFO 원가 계산, 샤프 비율, 적립식(DCA) 대 일시불 비교는 개념은 단순하지만 직접 숫자를 넣어 보기 어렵습니다. FinLab은 서버나 계정 없이 브라우저만으로 샘플 포트폴리오(AAPL·SPY, 거래 10건)를 열고, 거래를 추가·삭제하거나 CSV로 가져와 결과가 어떻게 바뀌는지 확인하게 합니다. 공개 데모는 실시간 시세와 실제 주문을 쓰지 않습니다.
 
-**🔗 [Try FinLab](https://yourusername.github.io/FinancialLab/)** *(배포 후 업데이트)*
+## 아키텍처
 
-**Demo Account:**
-- Email: `demo@finlab.app`
-- Mode: Mock (브라우저 IndexedDB 사용)
-
----
-
-## ✨ 주요 기능
-
-### 💼 포트폴리오 관리
-- 다중 포트폴리오 생성 및 관리
-- FIFO 방식 평균 단가 자동 계산
-- 실시간 포트폴리오 가치 추적
-
-### 📊 거래 추적
-- BUY/SELL/DEPOSIT/WITHDRAW 거래 지원
-- CSV 파일 일괄 임포트 (Web Worker)
-- 거래 내역 필터링 및 검색
-
-### 🧪 DCA 백테스팅
-- 정액 적립식 투자 전략 시뮬레이션
-- 일시불 투자 대비 성과 분석
-- 10,000+ 캔들 데이터 처리 (비동기)
-- 프랙셔널 주식 지원
-
-### 📈 리스크 지표
-- 샤프 비율 (Sharpe Ratio)
-- 연간 변동성 (Volatility)
-- 최대 낙폭 (Max Drawdown)
-- YTD 수익률
-
-### 🎯 재무 목표 & 계획
-- 재무 목표 설정 및 진행률 추적
-- DCA 투자 계획 자동화
-
----
-
-## 🛠️ 기술 스택
-
-### Frontend
-| Category | Technology |
-|----------|------------|
-| Framework | Vue 3 (Composition API) + TypeScript |
-| Build Tool | Vite 7 |
-| State Management | Pinia |
-| Routing | Vue Router 4 |
-| Database | Dexie.js (IndexedDB) |
-| Validation | Zod 4 |
-| Charts | Chart.js |
-| Testing | Vitest + happy-dom |
-| Workers | Web Workers (Backtest, Metrics, CSV) |
-
-### Backend (Optional)
-| Category | Technology |
-|----------|------------|
-| Framework | Spring Boot 3 |
-| Database | PostgreSQL + Flyway |
-| Security | Spring Security (JWT) |
-| Documentation | SpringDoc OpenAPI, Javadoc |
-| Testing | JUnit 5, Testcontainers |
-
----
-
-## 🏗️ 아키텍처 하이라이트
-
-### Backend Mode Toggle
-사용자는 **Mock API**와 **Live Backend** 간 전환 가능:
-
-```typescript
-// Mock Mode: 클라이언트 측 IndexedDB 사용
-configStore.setBackendMode('mock')
-
-// Live Mode: 실제 HTTP 요청 전송
-configStore.setBackendMode('live')
-configStore.setBackendUrl('https://api.finlab.app')
+```mermaid
+flowchart LR
+  subgraph Browser["브라우저 (Vue 3 SPA)"]
+    Pages["pages/*.vue"] --> Stores["Pinia stores"]
+    Stores --> ApiClient["services/api/apiClient.ts<br/>mock / live 분기"]
+    ApiClient -- mock --> Mock["services/api/mockClient.ts<br/>Zod 검증 + FIFO 원장 검증"]
+    Mock --> Repos["services/db/repositories"] --> IDB[("IndexedDB<br/>Dexie: FinLabDB")]
+    Mock --> Fifo["utils/fifoCalculator.ts<br/>decimal.js"]
+    Seed["utils/seedLoader.ts"] --> IDB
+    Static["public/data<br/>OHLCV CSV, 샘플 거래 JSON"] --> Seed
+    Pages -- postMessage --> BW["workers/backtestWorker.ts"]
+    Stores -- postMessage --> MW["workers/metricsWorker.ts"]
+    Pages -- postMessage --> CW["workers/csvImportWorker.ts"]
+  end
+  ApiClient -- "live (공개 데모에서는 비활성)" --> Live["외부 REST 백엔드 /v1/*<br/>(이 저장소에 없음)"]
 ```
 
-### Web Workers
-UI 블로킹 방지를 위한 백그라운드 계산:
-- **BacktestWorker**: DCA 시뮬레이션
-- **MetricsWorker**: 리스크 지표 계산
-- **CSVImportWorker**: 대용량 CSV 파싱
+자세한 구성과 실패 처리는 [docs/architecture.md](docs/architecture.md), 결정 기록은 [docs/adr/](docs/adr/)에 있습니다.
 
-### Dexie.js (IndexedDB)
-오프라인 우선 데이터 저장:
-- 버전 관리 및 마이그레이션
-- 트랜잭션 지원
-- 타입 안전 쿼리
+## 핵심 기술 결정
 
----
+- **API 계약 뒤의 브라우저 내 mock 백엔드** — 모든 화면은 `ApiClientInterface`만 호출하고, `configStore.backendMode`에 따라 `MockApiClient`(IndexedDB) 또는 `fetch` 기반 live 요청으로 갈립니다. live 응답도 같은 Zod 스키마로 검증합니다. 공개 빌드는 `VITE_DEMO_ONLY=true`로 mock을 강제합니다. (`frontend/src/services/api/apiClient.ts`, `frontend/src/stores/configStore.ts`, [ADR 0001](docs/adr/0001-mock-backend-behind-api-contract.md))
+- **저장 전에 FIFO 원장 검증** — 보유 수량을 넘는 매도, 이후 매도가 의존하는 매수의 삭제는 저장 전에 거부합니다. 잘못된 원장이 한 번 저장되면 이후 보유·지표 계산이 계속 실패하기 때문입니다. 금액 계산은 `decimal.js`로 합니다. (`frontend/src/services/api/mockClient.ts`의 `findLedgerError`, `frontend/src/utils/fifoCalculator.ts`, [ADR 0002](docs/adr/0002-validate-fifo-ledger-before-write.md))
+- **방문자 데이터를 지우지 않는 멱등 샘플 시딩** — 실제 IndexedDB 행을 기준으로 빠진 샘플만 채우고, 기존 포트폴리오와 분리된 이름의 샘플 포트폴리오를 씁니다. 시딩은 Dexie 트랜잭션 안에서 실행해 탭이 여러 개여도 중복되지 않습니다. (`frontend/src/utils/seedLoader.ts`, [ADR 0003](docs/adr/0003-idempotent-non-destructive-demo-seeding.md))
+- **계산은 Web Worker에서** — DCA/일시불 백테스트, 변동성·샤프·최대 낙폭, CSV 파싱을 각각 별도 워커에서 실행해 UI 스레드를 막지 않습니다. (`frontend/src/workers/`)
+- **브라우저 보안 헤더** — Vercel 응답에 CSP(`connect-src`를 self와 Vercel로 제한), `X-Frame-Options: DENY`, `nosniff`를 붙입니다. CSP 때문에 공개 데모에서는 외부 live 백엔드 호출이 막히므로 mock 전용 모드와 짝을 이룹니다. (`vercel.json`)
 
-## 🚀 빠른 시작
+## 로컬 실행
 
-### 사전 요구사항
-
-- Node.js 20+ (권장) 또는 16+
-- npm 또는 yarn
-- Git
-
-### 설치 및 실행
+Node 20 이상 (CI는 Node 20, 아래 결과는 Node 22.19.0에서 확인).
 
 ```bash
-# 저장소 클론
-git clone https://github.com/yourusername/FinancialLab.git
-cd FinancialLab/frontend
-
-# 의존성 설치
-npm install
-
-# 개발 서버 실행 (http://localhost:5173)
-npm run dev
-
-# 프로덕션 빌드
-npm run build
-
-# 빌드 결과 미리보기
-npm run preview
-
-# 테스트 실행
-npm run test
-
-# 테스트 커버리지
-npm run coverage
+cd frontend
+npm ci              # 의존성 설치
+npm test -- --run   # Vitest 1회 실행 (happy-dom + fake-indexeddb)
+npm run build       # vue-tsc -b 타입 검사 후 vite build
+npm run dev         # 개발 서버 http://localhost:5173 (이번 점검에서는 실행하지 않음)
 ```
 
----
+공개 데모와 같은 mock 전용 빌드는 `VITE_DEMO_ONLY=true npm run build`입니다 (`vercel.json`의 buildCommand).
 
-## 📁 프로젝트 구조
+## 테스트
 
-```
-FinancialLab/
-├── .github/
-│   └── workflows/
-│       └── deploy.yml           # GitHub Actions 배포 워크플로우
-├── frontend/
-│   ├── public/
-│   │   ├── data/                # 시드 데이터 (OHLCV CSV)
-│   │   └── docs/                # API 문서 (OpenAPI, Javadoc)
-│   ├── src/
-│   │   ├── app/                 # 라우터, 메인 설정
-│   │   ├── pages/               # 페이지 컴포넌트
-│   │   ├── components/          # 재사용 가능한 컴포넌트
-│   │   ├── stores/              # Pinia 스토어
-│   │   ├── services/
-│   │   │   ├── api/             # API 클라이언트 (Mock/Live)
-│   │   │   └── db/              # Dexie 리포지토리
-│   │   ├── workers/             # Web Workers
-│   │   ├── utils/               # 유틸리티 함수
-│   │   ├── composables/         # Vue Composables
-│   │   └── styles/              # 전역 스타일
-│   └── package.json
-├── docs/                         # 프로젝트 문서
-│   ├── README.md
-│   ├── API-DOCUMENTATION.md
-│   ├── USER-GUIDE.md
-│   ├── DEVELOPER-GUIDE.md
-│   └── TROUBLESHOOTING.md
-├── backend-samples/              # (선택) Spring Boot 샘플
-└── PRD.md                        # 제품 요구사항 명세
-```
-
----
-
-## 📸 스크린샷
-
-*추후 추가 예정*
-
----
-
-## 📚 문서
-
-| 문서 | 설명 |
+| 항목 | 결과 |
 |------|------|
-| [User Guide](./docs/USER-GUIDE.md) | 사용자 가이드 (기능 설명) |
-| [Developer Guide](./docs/DEVELOPER-GUIDE.md) | 개발자 가이드 (코드 구조) |
-| [API Documentation](./docs/API-DOCUMENTATION.md) | API 명세 및 스키마 |
-| [Configuration Guide](./docs/CONFIGURATION-GUIDE.md) | 설정 가이드 |
-| [Troubleshooting](./docs/TROUBLESHOOTING.md) | 문제 해결 |
-| [PRD](./PRD.md) | 제품 요구사항 명세서 |
+| 명령 | `cd frontend && npm test -- --run` |
+| 날짜 | 2026-10-28 |
+| 결과 | 테스트 파일 13개, 테스트 96개 통과 / 0 실패 / 0 건너뜀 |
+| 타입 검사 | `npm run build` (`vue-tsc -b`) 통과 |
 
----
+테스트 대상: FIFO 계산기, mock API의 원장 검증, 샘플 시딩, CSV 가져오기, 거래 필터, 자산 곡선, 날짜 입력, 백테스트 워커, 지표 워커, 설정 스토어, 다국어 문구와 라우트 문구. CI(`.github/workflows/ci.yml`)는 PR과 `main` push마다 `npm ci`, `npm run build`, `npm test -- --run`을 실행합니다.
 
-## 🧪 테스트
+## 한계와 다음 단계
 
-### 단위 테스트
+- **백엔드 코드가 없습니다.** live 모드는 `/v1/*` REST 계약(Zod 스키마, `frontend/public/docs/openapi.json`)으로 외부 서버를 부르도록 되어 있지만, 그 서버(PRD에 적힌 Spring Boot 구현)는 이 저장소에 없습니다. 기존 `docs/` 문서와 `PRD.md`의 백엔드 설명은 계획입니다.
+- **DCA 주기는 캔들 개수 기준입니다.** `backtestWorker.ts`는 `WEEKLY`를 7개 캔들, `MONTHLY`를 30개 캔들마다 매수합니다. 거래일 기준이므로 실제 달력 주·월보다 깁니다.
+- **샤프 비율 단위가 섞여 있습니다.** 일별 수익률은 퍼센트(예: `1` = 1%)인데 무위험 수익률은 소수(`0.02`)를 252로 나눠 그대로 뺍니다. 결과적으로 무위험 수익률이 의도보다 100배 작게 반영됩니다 (`metricsWorker.ts`, `mockClient.ts`).
+- **샘플 시세는 2024-01-02 ~ 2024-04-01** (AAPL, SPY, MSFT, QQQ, NVDA 종목별 약 62일치)뿐입니다.
+- 지표 계산이 `workers/metricsWorker.ts`와 `services/api/mockClient.ts`에 중복되어 있고, `composables/useBacktest.ts`는 현재 어느 화면에서도 쓰이지 않습니다.
+- FIFO 원가에 거래 수수료(`fee`)는 반영되지 않습니다.
 
-```bash
-# 전체 테스트 실행
-npm run test
+## 문서
 
-# UI 모드
-npm run test:ui
+| 문서 | 내용 |
+|------|------|
+| [docs/architecture.md](docs/architecture.md) | 구성 요소, 데이터 흐름, 실패 처리 |
+| [docs/adr/](docs/adr/) | 아키텍처 결정 기록 |
+| [docs/USER-GUIDE.md](docs/USER-GUIDE.md) | 화면별 사용법 |
+| [docs/DEVELOPER-GUIDE.md](docs/DEVELOPER-GUIDE.md) | 코드 구조 (백엔드 부분은 계획) |
+| [docs/API-DOCUMENTATION.md](docs/API-DOCUMENTATION.md) | `/v1/*` API 계약 |
+| [PRD.md](PRD.md) | 초기 제품 요구사항 |
 
-# 커버리지 확인
-npm run coverage
-```
+## 라이선스
 
-**테스트 대상:**
-- FIFO 계산기 (418 라인 테스트)
-- 각종 유틸리티 함수
-- Pinia 스토어 로직
-- API 스키마 검증
+이전 README에 MIT로 표기되어 있었으나 저장소에 `LICENSE` 파일은 아직 없습니다.
 
----
+## 사용한 오픈소스
 
-## 🌐 배포
-
-### GitHub Pages (정적 호스팅)
-
-GitHub Actions를 통해 자동 배포:
-1. `main` 브랜치에 push
-2. Workflow가 자동으로 빌드 및 배포
-3. https://yourusername.github.io/FinancialLab/ 에서 확인
-
-### Vercel / Netlify
-
-```bash
-# Vercel
-vercel --prod
-
-# Netlify
-netlify deploy --prod
-```
-
----
-
-## ⚡ 성능 최적화
-
-- **Code Splitting**: 라우트별 자동 분할
-- **Lazy Loading**: 컴포넌트 지연 로딩
-- **Tree Shaking**: 사용하지 않는 코드 제거
-- **Web Workers**: CPU 집약적 작업 오프로드
-- **IndexedDB**: 네트워크 요청 최소화
-
-**Lighthouse 목표 점수:**
-- Performance: ≥90
-- Accessibility: ≥90
-- Best Practices: ≥90
-- SEO: ≥80
-
----
-
-## 🔒 보안 주의사항
-
-⚠️ **이 프로젝트는 데모용입니다.**
-
-- 실제 금융 거래 불가
-- JWT 토큰은 시뮬레이션용 (프로덕션 보안 없음)
-- Mock 모드는 로컬 데이터만 사용
-
-프로덕션 환경에서는 HTTPS 및 CSP 헤더 설정 권장.
-
----
-
-## 🤝 기여 방법
-
-1. 이 저장소를 Fork
-2. Feature 브랜치 생성 (`git checkout -b feature/AmazingFeature`)
-3. 변경사항 커밋 (`git commit -m 'Add some AmazingFeature'`)
-4. 브랜치에 Push (`git push origin feature/AmazingFeature`)
-5. Pull Request 생성
-
-**코딩 스타일:**
-- TypeScript strict 모드 사용
-- 한글 주석 권장
-- Prettier/ESLint 설정 준수
-
----
-
-## 🗺️ 로드맵
-
-- [x] **Phase 1**: Core Features (포트폴리오, 거래, FIFO)
-- [x] **Phase 2**: Advanced Features (백테스팅, 리스크 지표)
-- [x] **Phase 3**: Documentation & Polish
-- [ ] **Phase 4**: Backend Integration (Spring Boot)
-- [ ] **Phase 5**: CI/CD & Production Deployment
-
----
-
-## 📝 라이선스
-
-MIT License - 자유롭게 사용, 수정, 배포 가능
-
----
-
-## 🙏 감사의 말
-
-이 프로젝트는 다음 오픈소스 라이브러리를 사용합니다:
-
-- [Vue.js](https://vuejs.org/) 팀
-- [Vite](https://vitejs.dev/) 팀
-- [Dexie.js](https://dexie.org/) 메인테이너
-- [Chart.js](https://www.chartjs.org/) 커뮤니티
-- [Zod](https://zod.dev/) 제작자
-
----
-
-**Made with ❤️ using Vue 3 + TypeScript**
+Vue, Vite, Pinia, Dexie.js, Chart.js, Zod, decimal.js, PapaParse, vue-i18n.
