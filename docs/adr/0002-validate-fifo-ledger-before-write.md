@@ -1,6 +1,7 @@
 # 0002. Validate the FIFO ledger before every write
 
-- Status: Accepted (as implemented)
+- Status: Accepted (as implemented) for the mock. The backend applies the same rule server-side under a portfolio
+  row lock: [backend ADR 0001](../../backend/docs/adr/0001-ledger-consistency.md).
 - Evidence: `frontend/src/services/api/mockClient.ts` (`findLedgerError`, `createTransaction`,
   `deleteTransaction`), `frontend/src/utils/fifoCalculator.ts`, `frontend/src/services/api/mockClient.spec.ts`,
   commit `d2d333d` (2026-09-26, "Fix demo ledger validation, CSV imports and local date defaults").
@@ -25,8 +26,9 @@ holdings and analytics request for that portfolio failed.
 ## Consequences
 
 - An invalid ledger cannot be created through the API, so holdings and metrics stay computable.
-- Each SELL or delete replays the full portfolio ledger: O(n) per write. Fine for demo-sized portfolios; a server
-  would want stored lots or an index.
+- Each SELL or delete replays the full portfolio ledger: O(n) per write. Fine for demo-sized portfolios. The backend
+  kept full replay (no stored lots) and added a `PESSIMISTIC_WRITE` lock so concurrent writers cannot both pass
+  validation; stored lots remain deferred until measured.
 - Buy fees are allocated per share in FIFO lots, so partial sales retain their share of cost. Sell fees reduce
   realized proceeds; `FifoCalculator.getSales()` exposes the resulting cost basis and realized PnL.
 - Backtest simulations are separate from ledger accounting and still omit fees.
