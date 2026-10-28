@@ -1,0 +1,9 @@
+[
+  {
+    "id": 1,
+    "portfolioId": 1,
+    "type": "BUY",
+    "fee": 2.5,
+    "timestamp": "2024-01-02T14:30:00Z"
+  }
+]

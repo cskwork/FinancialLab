@@ -1,0 +1,10 @@
+[
+  {
+    "id": 1,
+    "portfolioId": 1,
+    "name": "Emergency fund",
+    "targetAmount": 10000,
+    "targetDate": "2030-01-01T00:00:00Z",
+    "currentAmount": 250
+  }
+]
