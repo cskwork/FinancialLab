@@ -16,7 +16,7 @@ interface BacktestParams {
   startDate: string
   endDate: string
   initialCapital: number
-  dcaAmount: number // 월별 DCA 금액
+  dcaAmount: number // 선택한 주기별 DCA 금액
   dcaInterval: 'WEEKLY' | 'MONTHLY'
   candles: CandleData[]
 }
@@ -91,11 +91,14 @@ self.addEventListener('message', (event: MessageEvent<WorkerRequest>) => {
 function runBacktest(params: BacktestParams): BacktestResult {
   const { candles, initialCapital, dcaAmount, dcaInterval } = params
 
+  // Dates define the schedule; sort a copy so the caller's rows stay unchanged.
+  const orderedCandles = [...candles].sort((a, b) => a.date.localeCompare(b.date))
+
   // DCA 전략
-  const dcaResult = simulateDCA(candles, dcaAmount, dcaInterval)
+  const dcaResult = simulateDCA(orderedCandles, dcaAmount, dcaInterval)
 
   // Lump-sum 전략
-  const lumpSumResult = simulateLumpSum(candles, initialCapital)
+  const lumpSumResult = simulateLumpSum(orderedCandles, initialCapital)
 
   return {
     dcaStrategy: dcaResult,
@@ -107,6 +110,14 @@ function runBacktest(params: BacktestParams): BacktestResult {
       lumpSumWins: lumpSumResult.finalValue > dcaResult.finalValue
     }
   }
+}
+
+// An ISO week starts on Monday. Its Monday date is a unique key even across year boundaries.
+function calendarPeriod(date: string, interval: 'WEEKLY' | 'MONTHLY'): string {
+  if (interval === 'MONTHLY') return date.slice(0, 7)
+  const day = new Date(`${date}T00:00:00Z`)
+  day.setUTCDate(day.getUTCDate() - (day.getUTCDay() + 6) % 7)
+  return day.toISOString().slice(0, 10)
 }
 
 /**
@@ -121,12 +132,11 @@ function simulateDCA(
   let totalShares = new Decimal(0)
   const trades: TradeRecord[] = []
 
-  // 간격에 따라 매수 (간단 구현: 매월 첫 번째 캔들)
-  const step = interval === 'WEEKLY' ? 7 : 30
-
-  for (let i = 0; i < candles.length; i += step) {
-    const candle = candles[i]
-    if (!candle) continue
+  let previousPeriod: string | undefined
+  for (const candle of candles) {
+    const period = calendarPeriod(candle.date, interval)
+    if (period === previousPeriod) continue
+    previousPeriod = period
 
     const price = new Decimal(candle.close)
     const shares = new Decimal(dcaAmount).dividedBy(price)
